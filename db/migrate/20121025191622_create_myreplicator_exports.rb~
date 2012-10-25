@@ -1,8 +1,0 @@
-class CreateMyreplicatorExports < ActiveRecord::Migration
-  def change
-    create_table :myreplicator_exports do |t|
-
-      t.timestamps
-    end
-  end
-end
