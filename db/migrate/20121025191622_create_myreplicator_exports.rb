@@ -8,6 +8,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :max_incremental_value
       t.string :export_to, :default => "destination_db"
       t.string :export_type, :default => "incremental"
+      t.string :s3_path
       t.string :cron
       t.boolean :active, :default => true
       t.timestamps
