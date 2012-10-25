@@ -1,0 +1,21 @@
+<h1>Listing exports</h1>
+
+<table>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @exports.each do |export| %>
+  <tr>
+    <td><%= link_to 'Show', export %></td>
+    <td><%= link_to 'Edit', edit_export_path(export) %></td>
+    <td><%= link_to 'Destroy', export, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Export', new_export_path %>

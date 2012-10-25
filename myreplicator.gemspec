@@ -7,10 +7,10 @@ require "myreplicator/version"
 Gem::Specification.new do |s|
   s.name        = "myreplicator"
   s.version     = Myreplicator::VERSION
-  s.authors     = ["TODO: Your name"]
-  s.email       = ["TODO: Your email"]
-  s.homepage    = "TODO"
-  s.summary     = "TODO: Summary of Myreplicator."
+  s.authors     = ["Sasan Padidar"]
+  s.email       = ["sasan@raybeam.com"]
+  s.homepage    = "www.raybea.com"
+  s.summary     = "Simpler way to do replication instead of using mysql's replication."
   s.description = "TODO: Description of Myreplicator."
 
   s.files = Dir["{app,config,db,lib}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.rdoc"]
