@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121025191622) do
+ActiveRecord::Schema.define(:version => 20121026000720) do
 
   create_table "myreplicator_exports", :force => true do |t|
     t.string   "source_schema"
@@ -21,8 +21,8 @@ ActiveRecord::Schema.define(:version => 20121025191622) do
     t.string   "max_incremental_value"
     t.string   "export_to",             :default => "destination_db"
     t.string   "export_type",           :default => "incremental"
-    t.string   "frequency",             :default => "sync"
-    t.string   "run_at",                :default => "-"
+    t.string   "s3_path"
+    t.string   "cron"
     t.boolean  "active",                :default => true
     t.datetime "created_at",                                          :null => false
     t.datetime "updated_at",                                          :null => false
