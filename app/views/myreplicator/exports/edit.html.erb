@@ -1,6 +1,7 @@
-<h1>Editing export</h1>
+<%= link_to 'cancel', exports_path, :class => "btn right main" %>
+<%= link_to 'view', @export, :class => "btn right" %> 
+<h2>Edit Export</h2>
 
 <%= render 'form' %>
 
-<%= link_to 'Show', @export %> |
-<%= link_to 'Back', exports_path %>
+

@@ -6,9 +6,9 @@
 development:
   adapter: mysql2
   database: myreplicator
-  username: sas
-  password: sasan
-  host: 127.0.0.1
+  username: 
+  password: 
+  #host: 127.0.0.1
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".

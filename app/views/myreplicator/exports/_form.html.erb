@@ -10,8 +10,107 @@
       </ul>
     </div>
   <% end %>
+  <div class="form-section">
+
+<label>Source Schema</label>
+<%= f.text_field :source_schema %>
+<label>Table Name</label>
+<%= f.text_field :table_name %>
+<label>Incremental Column</label>
+<%= f.text_field :incremental_column %>
+<label>Maximum Incremental Value</label>
+<%= f.text_field :max_incremental_value %>
+<label>S3 Path</label>
+<%= f.text_field :s3_path %>
+<label>Export to</label>
+<select name="export[export_to]" id="export_to" class="chosen" data-placeholder="Select export destination">
+<option value="destination_db">destination database</option>
+<option value="s3">S3</option>
+<option value="both">both</option>
+</select>
+<label>Export type</label>
+<select name="export[export_type]" id="export_type" class="chosen" data-placeholder="Select your export type">
+<option value="incremental">incremental</option>
+<option value="fulldump">fulldump</option>
+</select>
+<label>Active</label>
+<select name="export[active]" id="active" class="chosen">
+<option value="true">true</option>
+<option value="false">false</option>
+</select>
+</div>
+<div class="form-section">
+<%= f.hidden_field :cron %>
+<label>Cron</label>
+<select id="min" class="cron" multiple data-placeholder="Minutes">
+  <option value="*">*</option>
+<% (0..59).each do |n| %>
+  <option value="<%=n %>"><%= n%></option>
+<% end %>
+</select>
+<select id="hour" class="cron" multiple data-placeholder="Hours">
+  <option value="*">*</option>
+<% (0..23).each do |n| %>
+  <option value="<%=n %>"><%= n%></option>
+<% end %>
+</select>
+<select id="day" class="cron" multiple data-placeholder="Days">
+  <option value="*">*</option>
+<% (1..31).each do |n| %>
+  <option value="<%=n %>"><%= n%></option>
+<% end %>
+</select>
+<select id="month" class="cron" multiple data-placeholder="Months">
+  <option value="*">*</option>
+<% (1..12).each do |n| %>
+  <option value="<%= n - 1%>"><%= Date::MONTHNAMES[n]%></option>
+<% end %>
+</select>
+<select id="dow" class="cron" multiple data-placeholder="Day of the Week">
+  <option value="*">*</option>
+<% (0..6).each do |n| %>
+  <option value="<%=n %>"><%= Date::DAYNAMES[n]%></option>
+<% end %>
+</select>
+<label>Cron synatx</label>
+<div id="cron-val"></div>
+<label>Cron translation</label>
+<div id="cronwtf"></div>
+</div>
+
+
+
+
 
   <div class="actions">
     <%= f.submit %>
   </div>
 <% end %>
+<%= javascript_include_tag "myreplicator/chosen.jquery.min" %>
+<%= javascript_include_tag "myreplicator/cronwtf.min" %>
+<script>
+function crontrans(){
+  var min = $("#min").val();
+  min = min == null ? '*' : min ;
+  //if(min.indexOf("*") != -1){$("#min").val('*')}
+  var hr = $("#hour").val()
+  hr = hr == null ? '*' : hr ;
+  var d = $("#day").val();
+  d = d == null ? '*' : d ;
+  var mon = $("#month").val();
+  mon = mon == null ? '*' : mon ;
+  var dow = $("#dow").val();
+  dow = dow == null ? '*' : dow ;
+  var cron  = min+" "+hr+" "+d+" "+mon+" "+dow;
+  var trans = String(CronWTF.parse(cron));
+  $("#cron-val").text(cron);
+  $("#export_cron").val(cron);
+  $("#cronwtf").text(trans);
+  alert($("#export_cron").val())
+}
+$(function(){
+  crontrans()
+  $(".chosen").chosen();
+  $(".cron").chosen().change(function(){crontrans()});
+})
+</script>
