@@ -11,9 +11,10 @@
     </div>
   <% end %>
   <div class="form-section">
-
 <label>Source Schema</label>
 <%= f.text_field :source_schema %>
+<label>Destination Schema</label>
+<%= f.text_field :destination_schema %>
 <label>Table Name</label>
 <%= f.text_field :table_name %>
 <label>Incremental Column</label>
@@ -42,75 +43,68 @@
 <div class="form-section">
 <%= f.hidden_field :cron %>
 <label>Cron</label>
-<select id="min" class="cron" multiple data-placeholder="Minutes">
+<span class="cron-label">minutes:</span><select id="min" class="cron" multiple data-placeholder="Minutes">
   <option value="*">*</option>
 <% (0..59).each do |n| %>
   <option value="<%=n %>"><%= n%></option>
 <% end %>
-</select>
-<select id="hour" class="cron" multiple data-placeholder="Hours">
+</select><br/>
+<span class="cron-label">hours:</span><select id="hour" class="cron" multiple data-placeholder="Hours">
   <option value="*">*</option>
 <% (0..23).each do |n| %>
   <option value="<%=n %>"><%= n%></option>
 <% end %>
-</select>
-<select id="day" class="cron" multiple data-placeholder="Days">
+</select><br/>
+<span class="cron-label">days:</span><select id="day" class="cron" multiple data-placeholder="Days">
   <option value="*">*</option>
 <% (1..31).each do |n| %>
   <option value="<%=n %>"><%= n%></option>
 <% end %>
-</select>
-<select id="month" class="cron" multiple data-placeholder="Months">
+</select><br/>
+<span class="cron-label">months:</span><select id="month" class="cron" multiple data-placeholder="Months">
   <option value="*">*</option>
 <% (1..12).each do |n| %>
   <option value="<%= n - 1%>"><%= Date::MONTHNAMES[n]%></option>
 <% end %>
-</select>
-<select id="dow" class="cron" multiple data-placeholder="Day of the Week">
+</select><br/>
+<span class="cron-label">weekday:</span><select id="dow" class="cron" multiple data-placeholder="Day of the Week">
   <option value="*">*</option>
 <% (0..6).each do |n| %>
   <option value="<%=n %>"><%= Date::DAYNAMES[n]%></option>
 <% end %>
 </select>
-<label>Cron synatx</label>
+<label style="clear:left">Cron synatx</label>
 <div id="cron-val"></div>
 <label>Cron translation</label>
 <div id="cronwtf"></div>
 </div>
-
-
-
-
-
   <div class="actions">
     <%= f.submit %>
+    <%= link_to content_tag(:span, 'cancel'), exports_path, :class => "btn left action cancel" %>
   </div>
 <% end %>
 <%= javascript_include_tag "myreplicator/chosen.jquery.min" %>
 <%= javascript_include_tag "myreplicator/cronwtf.min" %>
 <script>
-function crontrans(){
-  var min = $("#min").val();
-  min = min == null ? '*' : min ;
-  //if(min.indexOf("*") != -1){$("#min").val('*')}
-  var hr = $("#hour").val()
-  hr = hr == null ? '*' : hr ;
-  var d = $("#day").val();
-  d = d == null ? '*' : d ;
-  var mon = $("#month").val();
-  mon = mon == null ? '*' : mon ;
-  var dow = $("#dow").val();
-  dow = dow == null ? '*' : dow ;
-  var cron  = min+" "+hr+" "+d+" "+mon+" "+dow;
-  var trans = String(CronWTF.parse(cron));
-  $("#cron-val").text(cron);
-  $("#export_cron").val(cron);
-  $("#cronwtf").text(trans);
-  alert($("#export_cron").val())
-}
 $(function(){
-  crontrans()
+  CronUI.translate();
   $(".chosen").chosen();
-  $(".cron").chosen().change(function(){crontrans()});
+  $(".cron").chosen().change(function(){CronUI.translate()});
+
+  <%- if @edit -%>
+function editInit(){
+  var cron = "<%= @export.cron %>";
+  var displays = ["#min","#hour","#day","#month","#dow"]; 
+  var cron_vals = cron.split(" ");
+  for(i=0;i<cron_vals.length; i++){
+    //console.log(displays[i]+" val: "+cron_vals[i])
+    $(displays[i]).val(cron_vals[i]).trigger("liszt:updated");
+  }
+  CronUI.translate();
+}
+editInit();
+  <%- end -%>
+
+
 })
 </script>

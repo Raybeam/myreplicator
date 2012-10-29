@@ -1,21 +1,52 @@
-<%= link_to 'add export', new_export_path, :class => "btn right main" %>
+<%= link_to content_tag(:span, 'add export'), new_export_path, :class => "btn right main add" %>
 <h2>Exports</h2>
-
-<table>
-  <tr>
-    <th></th>
-    <th></th>
-    <th></th>
-  </tr>
-
-<% @exports.each do |export| %>
-  <tr>
-    <td><%= link_to 'Show', export %></td>
-    <td><%= link_to 'Edit', edit_export_path(export) %></td>
-    <td><%= link_to 'Destroy', export, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-  </tr>
-<% end %>
-</table>
-
-<br />
-
+<div class="table-wrapper">
+  <table class="data-grid">
+    <thead>
+      <tr>
+       <th colspan="2">Source Schema</th>
+       <th>Destination Schema</th>
+       <th>Table Name</th>
+       <th>Incremental Column</th>
+       <th>Max Incremental Value</th>
+       <th>Export Destination</th>
+       <th>Export Type</th> 
+       <th>S3 path</th>
+       <th>Cron</th> 
+       <th class="center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @exports.each do |export| %>
+      <tr>
+        <td class="state"><span class="status <% if export.active %>active<% else %>inactive<% end %>" title="<% if export.active %>Active<% else %>Inactive<% end %>"></span></td> 
+        <td class="source"><%= export.source_schema %></td>
+        <td><%= export.destination_schema %></td>
+        <td><%= export.table_name %></td>
+        <td><%= export.incremental_column %></td>
+        <td><%= export.max_incremental_value %></td>
+        <td><%= export.export_to %></td>
+        <td><%= export.export_type %></td> 
+        <td><%= export.s3_path %></td>
+        <td><span class="cron" data-cron="<%= export.cron %>" title=""><%= export.cron %></span></td>     
+        <td>
+          <%= link_to 'review', export, :class=> 'action view' %>
+          <%= link_to 'edit', edit_export_path(export), :class => 'action edit' %>
+          <%= link_to 'destroy', export, method: :delete, data: { confirm: 'Are you sure?' }, :class=> 'action delete' %>
+        </td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+</div>
+<script>
+$(function(){
+  $.each($("span.cron"),function(i){
+    var span = $(this)
+    var trans = String(CronWTF.parse(span.data("cron")));
+    span.attr("title", trans)
+  })
+  $("span.status").tipTip();
+  $("span.cron").tipTip();
+})
+</script>

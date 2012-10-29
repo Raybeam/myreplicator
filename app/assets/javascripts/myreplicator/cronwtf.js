@@ -124,3 +124,33 @@ var CronWTF = {
     return "on " + v.join(", ")
   }
 }
+
+var CronUI = {
+  translate: function(){
+    var min = $("#min").val();
+    min_v = min == null ? '*' : this.process('#min',min) ;
+    var hr = $("#hour").val()
+    hr_v = hr == null ? '*' : this.process('#hour',hr) ;
+    var d = $("#day").val();
+    d_v = d == null ? '*' : this.process('#day',d) ;
+    var mon = $("#month").val();
+    mon_v = mon == null ? '*' : this.process('#month',mon) ;
+    var dow = $("#dow").val();
+    dow_v = dow == null ? '*' : this.process('#dow', dow) ;
+    var cron  = min_v+" "+hr_v+" "+d_v+" "+mon_v+" "+dow_v;
+    var trans = String(CronWTF.parse(cron));
+    $("#cron-val").text(cron);
+    $("#export_cron").val(cron);
+    $("#cronwtf").text(trans);    
+  },
+  process: function(id,value){
+    if(value.indexOf("*") != -1){
+      $(id).val("*").trigger("liszt:updated");
+      var all ='*';
+      return all;
+    }else{
+      return value;
+    }    
+  }
+}
+

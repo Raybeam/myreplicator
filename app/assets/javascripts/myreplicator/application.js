@@ -13,3 +13,9 @@
 //= require jquery
 //= require jquery_ujs
 //= require_tree .
+$(function(){
+	var $flash = $(".flash")
+	if($flash.length > 0 ){
+	  $flash.css({left:($(window).width()-700)/2}).fadeIn().delay(5000).fadeOut();
+	}
+})

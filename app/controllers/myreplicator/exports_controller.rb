@@ -1,7 +1,9 @@
 require_dependency "myreplicator/application_controller"
 
 module Myreplicator
+
   class ExportsController < ApplicationController
+    before_filter :tab
     # GET /exports
     # GET /exports.json
     def index
@@ -38,6 +40,7 @@ module Myreplicator
     # GET /exports/1/edit
     def edit
       @export = Export.find(params[:id])
+      @edit = true
     end
   
     # POST /exports
@@ -83,5 +86,12 @@ module Myreplicator
         format.json { head :no_content }
       end
     end
+
+  private
+
+    def tab
+      @tab = "exports"
+    end
+
   end
 end

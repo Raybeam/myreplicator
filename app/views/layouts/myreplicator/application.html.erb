@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Myreplicator</title>
+  <title>My Replicator</title>
   <%= stylesheet_link_tag    "myreplicator/application", :media => "all" %>
   <%= javascript_include_tag "myreplicator/application" %>
   <%= csrf_meta_tags %>
 </head>
 <body>
 
-<div id="header"><h1><span>C</span>My Replicator</h1></div>
+<div id="header"><h1><a href="<%= root_path %>"><span>C</span>My Replicator</a></h1></div>
+<div id="sub-header">
+  <a href="<%= exports_path %>" <% if @tab == "exports" %>class="active"<% end %>>exports</a>
+</div>
 
 <%= yield %>
-
+<% flash.each do |name, msg| %>
+  <div class="flash">
+    <%= msg %>
+  </div>
+<% end %> 
 </body>
 </html>
