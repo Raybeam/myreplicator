@@ -10,6 +10,7 @@
 
 <div id="header"><h1><a href="<%= root_path %>"><span>C</span>My Replicator</a></h1></div>
 <div id="sub-header">
+  <a href="<%= root_path %>" <% if @tab == "home" %>class="active"<% end %>>home</a>
   <a href="<%= exports_path %>" <% if @tab == "exports" %>class="active"<% end %>>exports</a>
 </div>
 
