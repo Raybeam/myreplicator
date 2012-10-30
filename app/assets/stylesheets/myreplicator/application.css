@@ -270,12 +270,33 @@ table.data-grid thead tr{
 }
 table.data-grid th {
   border:1px solid #ddd;
+  color:#333;
   font-weight:bold;
-  padding:5px 15px 5px 10px;
+  padding:5px 0 5px 10px;
   text-align:left;
   text-shadow:0px 1px #fff; 
 }
 table.data-grid th.center {text-align:center;}
+table.data-grid th a { color:#333; display:block; text-decoration:none; }
+table.data-grid th .current {
+  background-image: -moz-linear-gradient(top, #333, #777);
+  background-image: -webkit-gradient(linear,left top,left bottom,color-stop(0, #333),color-stop(1, #777));
+  color:#fff;
+  margin:-5px 0 -5px -10px;
+  padding:5px 0 5px 10px;
+  text-shadow:0 1px #333;
+}
+
+table.data-grid th a span {
+  background-image: url(bg.gif);
+  background-repeat: no-repeat;
+  background-position: right center;  
+  display:block;
+  padding-right: 12px;   
+}
+
+table.data-grid th .asc span { background-image: url(desc-white.gif);}
+table.data-grid th .desc span{ background-image: url(asc-white.gif);}
 
 table.data-grid td {
   border:1px solid #ddd;
@@ -306,3 +327,89 @@ ul#export-review li {border-bottom:1px solid #eee; line-height:22px;padding:5px 
 ul#export-review li:last-child {border:0}
 ul#export-review li span{ font-family:'FrancoisOne'; font-size:14px; font-weight:normal;}
 
+div.pagination { margin:0 20px; overflow:auto; padding:0;}
+div.pagination a,
+div.pagination em.current,
+div.pagination span.previous_page.disabled,
+div.pagination span.next_page.disabled  {
+    -moz-box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);    
+    -webkit-box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);    
+    border-radius:3px;
+    color: #333;
+    cursor: pointer;
+    font-family: 'FrancoisOne';
+    font-size: 14px;
+    font-weight:normal;
+    line-height:19px;
+    margin:0 5px 5px;
+    padding:5px 10px 3px;
+    text-decoration:none;
+    text-shadow:0 1px #fff;
+    width:inherit
+}
+div.pagination a,
+div.pagination em.current,
+div.pagination span.previous_page.disabled,
+div.pagination span.next_page.disabled  {float:left;}
+
+div.pagination span.gap {
+    color: #333;
+    display:block;
+    float:left;
+    font-family: 'FrancoisOne';
+    font-size: 12px;
+    font-weight:normal;
+    margin:0 5px 5px;
+    padding:5px 0;
+}
+
+div.pagination a:hover {
+    background:rgba(0,0,0,0.02);
+    -moz-box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+    -webkit-box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+div.pagination a:active {
+    background:#666;
+    -moz-box-shadow:inset 0 0 5px rgba(0,0,0,0.8);
+    -webkit-box-shadow:inset 0 0 5px rgba(0,0,0,0.8);    
+    box-shadow:inset 0 0 5px rgba(0,0,0,0.8);
+    color:#fff;
+    text-shadow:0 1px #333;
+}
+
+div.pagination a.previous_page,
+div.pagination a.next_page,
+div.pagination span.previous_page.disabled,
+div.pagination span.next_page.disabled  { font-family: 'WebSymbolsRegular'; line-height:17px;}
+div.pagination a.previous_page,div.pagination span.previous_page.disabled { margin-left:3px;padding:5px 10px 5px 8px }
+div.pagination a.next_page,div.pagination span.next_page.disabled { padding:5px 8px 5px 10px }
+div.pagination em.current{ 
+    background: #555;
+    background: -moz-linear-gradient(top,  #525252 0%, #555 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#525252), color-stop(100%,#555));
+    background: -webkit-linear-gradient(top,  #525252 0%,#555 100%);
+    background: -o-linear-gradient(top,  #525252 0%,#555 100%);
+    background: -ms-linear-gradient(top,  #525252 0%,#555 100%);
+    background: linear-gradient(top,  #525252 0%,#555 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#525252', endColorstr='#555',GradientType=0 );
+    -moz-box-shadow:inset 0 1px 3px rgba(0,0,0,1);    
+    -webkit-box-shadow:inset 0 1px 3px rgba(0,0,0,1);    
+    box-shadow:inset 0 1px 3px rgba(0,0,0,1);    
+    color:#fff;
+    text-shadow:0 1px #333;
+}
+
+div.pagination span.previous_page.disabled,
+div.pagination span.next_page.disabled {color:#bbb;}
+div#pagination-display-message {
+  color:#474747;
+  font-family: 'FrancoisOne';
+  font-size: 14px;
+  font-weight:normal;
+  line-height:19px;
+  margin:8px 20px 10px;
+  text-shadow:0 1px #fff;
+}
