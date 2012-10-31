@@ -1,3 +1,9 @@
+<% 
+#rather than yaml arrays of the drop downs
+export_to = ["destination_db","s3","both"]
+export_type = ["incremental","fulldump"]
+%>
+
 <%= form_for(@export) do |f| %>
   <% if @export.errors.any? %>
     <div id="error_explanation">
@@ -25,19 +31,20 @@
 <%= f.text_field :s3_path %>
 <label>Export to</label>
 <select name="export[export_to]" id="export_to" class="chosen" data-placeholder="Select export destination">
-<option value="destination_db">destination database</option>
-<option value="s3">S3</option>
-<option value="both">both</option>
+  <% export_to.each do |val| %>
+  <option value="<%= val %>" <% if @export.export_to == val %>SELECTED<% end %>><%= val %></option>
+  <% end %> 
 </select>
 <label>Export type</label>
 <select name="export[export_type]" id="export_type" class="chosen" data-placeholder="Select your export type">
-<option value="incremental">incremental</option>
-<option value="fulldump">fulldump</option>
+  <% export_type.each do |val| %>
+  <option value="<%= val %>" <% if @export.export_type == val %>SELECTED<% end %>><%= val %></option>
+  <% end %>
 </select>
 <label>Active</label>
 <select name="export[active]" id="active" class="chosen">
-<option value="true">true</option>
-<option value="false">false</option>
+  <option value="true" <% if @export.active == true %>SELECTED<% end %>>true</option>
+  <option value="false" <% if @export.active == false %>SELECTED<% end %>>false</option>
 </select>
 </div>
 <div class="form-section">
