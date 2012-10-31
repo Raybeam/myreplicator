@@ -6,7 +6,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :table_name
       t.string :incremental_column
       t.string :max_incremental_value
-      t.string :increlemtal_column_type
+      t.string :incremental_column_type
       t.string :export_to, :default => "destination_db"
       t.string :export_type, :default => "incremental"
       t.string :s3_path

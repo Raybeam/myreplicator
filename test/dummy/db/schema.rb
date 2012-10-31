@@ -11,7 +11,12 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121026000720) do
+ActiveRecord::Schema.define(:version => 20121031182043) do
+
+  create_table "my_test", :force => true do |t|
+    t.string   "desc",       :limit => 45
+    t.datetime "updated_at"
+  end
 
   create_table "myreplicator_exports", :force => true do |t|
     t.string   "source_schema"
