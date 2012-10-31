@@ -1,5 +1,7 @@
 class SampleData < ActiveRecord::Migration
   def up
+    execute "drop table if EXISTS myreplicator.my_test"
+
     sql =<<EOT
 
 CREATE  TABLE IF NOT EXISTS `myreplicator`.`my_test` (
@@ -23,6 +25,7 @@ EOT
 
   def down
     execute "drop table if EXISTS myreplicator.my_test"
+
     execute "truncate myreplicator.myreplicator_exports"
   end
 end

@@ -1,8 +1,8 @@
 module Myreplicator
   module SqlComands
     
-    def self.export_cmd
-      "mysqldump "
+    def self.mysqldump
+      "mysqldump -u#{} "
     end
     
   end

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121031182043) do
+ActiveRecord::Schema.define(:version => 20121031205339) do
 
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
@@ -24,13 +24,17 @@ ActiveRecord::Schema.define(:version => 20121031182043) do
     t.string   "table_name"
     t.string   "incremental_column"
     t.string   "max_incremental_value"
-    t.string   "export_to",             :default => "destination_db"
-    t.string   "export_type",           :default => "incremental"
+    t.string   "incremental_column_type"
+    t.string   "export_to",               :default => "destination_db"
+    t.string   "export_type",             :default => "incremental"
     t.string   "s3_path"
     t.string   "cron"
-    t.boolean  "active",                :default => true
-    t.datetime "created_at",                                          :null => false
-    t.datetime "updated_at",                                          :null => false
+    t.datetime "last_run"
+    t.string   "state"
+    t.string   "error"
+    t.boolean  "active",                  :default => true
+    t.datetime "created_at",                                            :null => false
+    t.datetime "updated_at",                                            :null => false
   end
 
 end
