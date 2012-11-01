@@ -12,9 +12,9 @@ Configuration
 
 You can configure the settings manually by:
 
-MyEngine.config do |config|
-  config.some_configuration_option = "Whatever"
-end
+    Myreplicator.config do |config|
+         config.some_configuration_option = "Whatever"
+    end
 
 Sample Yaml file
 ---------------------------
@@ -30,11 +30,3 @@ Installation
 
 Usage
 -----
-
-    require 'github/markup'
-    GitHub::Markup.render('README.markdown', "* One\n* Two")
-
-Or, more realistically:
-
-    require 'github/markup'
-    GitHub::Markup.render(file, File.read(file))
