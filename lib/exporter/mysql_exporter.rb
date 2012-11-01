@@ -3,7 +3,7 @@ module Myreplicator
     
     def initialize *args
       options = args.extract_options!
-      
+      Dir.mkdir(Myreplicator.app_root) unless File.directory?(Myreplicator.app_root)
     end
 
     def export_table
@@ -17,9 +17,10 @@ module Myreplicator
     end
 
     def zipfile
-      cmd = "cd gzip #{filepath}"
-      ` `
+      cmd = "cd #{Myreplicato::Configuration.tmp_path}; gzip #{filename}"
+      puts cmd
+      `#{cmd}`
     end
-
+    
   end
 end
