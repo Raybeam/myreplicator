@@ -10,5 +10,16 @@ module Myreplicator
       
     end
 
+    def create_table
+      Myreplicator::SqlCommands.mysqldump(:db => db, 
+                                          :flags => ["create-options", "compact"],
+                                          :filepath => filepath)
+    end
+
+    def zipfile
+      cmd = "cd gzip #{filepath}"
+      ` `
+    end
+
   end
 end

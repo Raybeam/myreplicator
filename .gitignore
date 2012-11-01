@@ -26,4 +26,4 @@ test/dummy/tmp/
 test/dummy/config/database.yml
 
 *~
-
+*.yml
