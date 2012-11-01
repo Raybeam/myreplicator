@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121031205339) do
+ActiveRecord::Schema.define(:version => 20121101005152) do
 
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
@@ -36,5 +36,7 @@ ActiveRecord::Schema.define(:version => 20121031205339) do
     t.datetime "created_at",                                            :null => false
     t.datetime "updated_at",                                            :null => false
   end
+
+  add_index "myreplicator_exports", ["source_schema", "destination_schema", "table_name"], :name => "unique_index", :unique => true
 
 end

@@ -16,11 +16,12 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :error
       t.boolean :active, :default => true
       t.timestamps
-    end
-
-    def self.down
-      drop_table :myreplicator
-    end
-
+    end  
+    add_index :myreplicator_exports, [:source_schema, :destination_schema, :table_name], :unique => true, :name => "unique_index"
   end
+
+  def self.down
+    drop_table :myreplicator_exports
+  end
+  
 end
