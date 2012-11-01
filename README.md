@@ -5,6 +5,12 @@ Rails engine that can replace mysql replication
 
 --------------------------
 
+Installation
+-----------
+
+    gem install myreplicator
+
+
 Configuration
 ---------------------------
 * Create a yaml file called myreplicator.yml under the config folder in your rails app
@@ -16,17 +22,12 @@ You can configure the settings manually by:
          config.some_configuration_option = "Whatever"
     end
 
+
 Sample Yaml file
 ---------------------------
     myreplicator:
       tmp_path: tmp/myreplicator
  
-
-Installation
------------
-
-    gem install myreplicator
-
 
 Usage
 -----
