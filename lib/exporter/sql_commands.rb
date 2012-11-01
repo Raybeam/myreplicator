@@ -15,10 +15,10 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
-
-      cmd = "mysqldump #{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
+      cmd = Myreplicator::Configuration.mysqldump
+      cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
       cmd += "-h#{db_configs(db)["host"]} -P#{db_configs(db)["port"]} "
-      cmd += " result-file=#{options[:filepath]} "
+      cmd += "result-file=#{options[:filepath]} "
 
       puts cmd
       return cmd
@@ -41,5 +41,9 @@ module Myreplicator
       }
     end
     
+    def mysql_export *args
+      cmd = "mysql"
+    end
+
   end
 end

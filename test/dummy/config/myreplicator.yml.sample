@@ -1,2 +1,4 @@
 myreplicator:
   tmp_path: tmp/myreplicator
+  mysqldump: mysqldump
+  mysql: mysql

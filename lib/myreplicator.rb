@@ -1,8 +1,8 @@
 require "myreplicator/engine"
 
 module Myreplicator
-   mattr_accessor :app_root
-
+  mattr_accessor :app_root
+  
   class Engine < Rails::Engine
 
     initializer "myreplicator.configure_rails_initialization" do |app|
@@ -15,11 +15,13 @@ module Myreplicator
   # Configuration class for avoiding load the yml file everytime and cleaner config settings
   ##
   class Configuration
-    class << self; attr_accessor :tmp_path end
+    class << self; attr_accessor :tmp_path, :mysqldump, :mysql end
     
     yml = YAML.load("#{Myreplicator.app_root}/config/myreplicator.yml")
 
     @@tmp_path = yml["myreplicator"]["tmp_path"]
+    @@mysql = yml["myreplicator"]["mysql"]
+    @@mysqldump = yml["myreplicator"]["mysqldump"]
   end
 
   def self.config(&block)
