@@ -6,7 +6,7 @@ module Myreplicator
       Dir.mkdir(Myreplicator.app_root) unless File.directory?(Myreplicator.app_root)
     end
 
-    def export_table
+    def export_table exportObj
       
     end
 

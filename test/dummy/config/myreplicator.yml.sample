@@ -2,3 +2,8 @@ myreplicator:
   tmp_path: tmp/myreplicator
   mysqldump: mysqldump
   mysql: mysql
+  outfile_location: /tmp/myreplicator
+  escape_by: '"'
+  terminate_by: '\t'
+  enclosed_by: '"'
+  lines_terminate_by: '\n'
