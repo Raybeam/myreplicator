@@ -25,7 +25,7 @@ module Myreplicator
     end
 
     def self.db_configs db
-      ActiveRecord::Base.configurations[myreplicator][db]
+      ActiveRecord::Base.configurations[Rails.env][db]
     end
     
     def self.dump_flags
