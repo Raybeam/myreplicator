@@ -13,4 +13,8 @@ module Myreplicator
 
   end
 
+  module Exceptions
+    class MissingArgs < StandardError; end
+  end
+
 end

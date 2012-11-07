@@ -73,8 +73,32 @@ module Myreplicator
       }    
     end
 
-    def self.mysql_export_outfile
+    def self.export_sql *args
+      options = args.extract_options!
+      sql = "SELECT * FROM #{options[:db]}.#{options[:table]} " 
+      
+      if options[:incremental_col] && options[:incremental_val]
+        sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+      end
 
+      return sql
+    end
+
+    def self.max_value_sql *args
+      options = args.extract_options!
+      sql = ""
+
+      if options[:incremental_col]
+        sql = "SELECT max(#{options[:incremental_col]}) FROM #{options[:db]}.#{options[:table]}" 
+      else
+        raise Myreplicator::Exceptions::MissingArgs.new("Missing Incremental Column Parameter")
+      end
+      
+      return sql
+    end
+
+    def self.mysql_export_outfile
+      
     end
 
   end
