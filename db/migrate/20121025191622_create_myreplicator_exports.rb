@@ -12,7 +12,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :s3_path
       t.string :cron
       t.datetime :last_run, :default => nil
-      t.string :state
+      t.string :state, :default => "new"
       t.string :error
       t.boolean :active, :default => true
       t.timestamps
