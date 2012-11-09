@@ -15,17 +15,20 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
-      cmd = Myreplicator::Configuration.mysqldump
-      cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
-      cmd += "-h#{db_configs(db)["host"]} -P#{db_configs(db)["port"]} "
-      cmd += "result-file=#{options[:filepath]} "
+      cmd = Myreplicator.mysqldump
+      cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
+      cmd += "-h#{db_configs(db)["host"]} " if db_configs(db)["host"]
+      cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
+      cmd += " #{db} "
+      cmd += " #{options[:table_name]} "
+      cmd += "--result-file=#{options[:filepath]} "
 
       puts cmd
       return cmd
     end
 
     def self.db_configs db
-      ActiveRecord::Base.configurations[Rails.env][db]
+      ActiveRecord::Base.configurations[db]
     end
     
     def self.dump_flags
@@ -56,7 +59,7 @@ module Myreplicator
         end
       end
 
-      cmd = Myreplicator::Configuration.mysql
+      cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
       cmd += "-h#{db_configs(db)["host"]} -P#{db_configs(db)["port"]} "
       cmd += "--execute=\"#{options[:sql]}\" "

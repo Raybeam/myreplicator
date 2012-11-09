@@ -3,7 +3,8 @@ module Myreplicator
     
     def initialize *args
       options = args.extract_options!
-      Dir.mkdir(Myreplicator.app_root) unless File.directory?(Myreplicator.app_root)
+      @tmp_dir = File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
     end
 
     def export_table export_obj
@@ -18,15 +19,18 @@ module Myreplicator
 
     def initial_export
       flags = ["create-options", "single-transaction"]       
-      SqlCommands.mysqldump(:db => @export_obj.source_schema,
-                            :flags => flags,
-                            :filepath => File.join(Configuration.tmp_path, @export_obj.filename))     
+      cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
+                                  :flags => flags,
+                                  :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename),
+                                  :table_name => @export_obj.table_name)     
+      result = `#{cmd}`
+      raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
     end
 
     def incremental_export
-      @export_obj.update_max_val if @export_obj.incremental_value.blank?
-      
       max_value = @export_obj.max_value
+
+      @export_obj.update_max_val if @export_obj.incremental_value.blank?   
 
       Kernel.p max_value
       Kernel.p @export_obj.incremental_value
@@ -39,15 +43,14 @@ module Myreplicator
                                      :incremental_val => @export_obj.incremental_value)      
         
         SqlCommands.mysql_export(:db => @export_obj.source_schema,
-                                 :filepath => File.join(Configuration.tmp_path, @export_obj.filename),
+                                 :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename),
                                  :sql => sql)
       end
-
     end
 
     def dump_export
       SqlCommands.mysqldump(:db => @export_obj.source_schema,
-                            :filepath => File.join(Configuration.tmp_path, @export_obj.filename))    
+                            :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename))    
     end
 
     def create_table
@@ -57,7 +60,7 @@ module Myreplicator
     end
 
     def zipfile
-      cmd = "cd #{Myreplicato::Configuration.tmp_path}; gzip #{filename}"
+      cmd = "cd #{Myreplicator.tmp_path}; gzip #{filename}"
       puts cmd
       `#{cmd}`
     end

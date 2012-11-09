@@ -20,7 +20,5 @@ EOT
 
   def down
     execute "drop table if EXISTS myreplicator.my_test"
-
-    execute "truncate myreplicator.myreplicator_exports"
   end
 end

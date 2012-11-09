@@ -24,7 +24,7 @@ module Myreplicator
     end
 
     def filename
-      @file_name ||= "#{source_schema}_#{table_name}_#{Time.now.to_i}"
+      @file_name ||= "#{source_schema}_#{table_name}_#{Time.now.to_i}.tsv"
     end
 
     def max_value
@@ -53,8 +53,11 @@ module Myreplicator
     ##
 
     class SourceDb < ActiveRecord::Base
+      
       def self.connect db
+        @@connected ||= true
         establish_connection(ActiveRecord::Base.configurations[db])
+        Kernel.p ActiveRecord::Base.connected?
       end
       
       def self.exec_sql source_db,sql

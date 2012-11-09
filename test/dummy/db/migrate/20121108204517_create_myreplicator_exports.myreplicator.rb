@@ -1,3 +1,4 @@
+# This migration comes from myreplicator (originally 20121025191622)
 class CreateMyreplicatorExports < ActiveRecord::Migration
   def change
     create_table :myreplicator_exports do |t|
