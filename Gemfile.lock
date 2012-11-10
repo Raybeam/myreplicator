@@ -123,6 +123,7 @@ PLATFORMS
 
 DEPENDENCIES
   jquery-rails
+  json
   myreplicator!
   mysql2
   sidekiq
