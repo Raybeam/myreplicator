@@ -9,25 +9,35 @@ module Myreplicator
 
     def export_table export_obj
       @export_obj = export_obj
-      
-      if @export_obj.state == "new"
-        initial_export
-      elsif !@export_obj.incremental_column.blank?
-        incremental_export
+
+      ExportMetadata.record(:table => @export_obj.table_name,
+                            :database => @export_obj.source_schema,
+                            :filepath => filepath) do |metadata|
+
+        if @export_obj.state == "new"
+          initial_export metadata
+        elsif !@export_obj.incremental_column.blank?
+          incremental_export metadata
+        end
+
       end
     end
 
-    def initial_export
+    def filepath
+      File.join(Myreplicator.tmp_path, @export_obj.filename)
+    end
+
+    def initial_export metadata
       flags = ["create-options", "single-transaction"]       
       cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
                                   :flags => flags,
-                                  :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename),
+                                  :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
       result = `#{cmd}`
       raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
     end
 
-    def incremental_export
+    def incremental_export metadata
       max_value = @export_obj.max_value
 
       @export_obj.update_max_val if @export_obj.incremental_value.blank?   
@@ -43,14 +53,14 @@ module Myreplicator
                                      :incremental_val => @export_obj.incremental_value)      
         
         SqlCommands.mysql_export(:db => @export_obj.source_schema,
-                                 :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename),
+                                 :filepath => filepath,
                                  :sql => sql)
       end
     end
 
-    def dump_export
+    def dump_export metadata
       SqlCommands.mysqldump(:db => @export_obj.source_schema,
-                            :filepath => File.join(Myreplicator.tmp_path, @export_obj.filename))    
+                            :filepath => filepath)    
     end
 
     def create_table

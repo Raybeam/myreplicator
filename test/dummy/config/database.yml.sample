@@ -10,7 +10,7 @@ development:
   password:
   host: 127.0.0.1
 
-source_db:
+okl_dev:
   adapter: mysql2
   database: okl_dev
   username: sas

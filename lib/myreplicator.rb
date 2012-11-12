@@ -2,7 +2,7 @@ require "myreplicator/engine"
 
 
 module Myreplicator
-  mattr_accessor :app_root, :tmp_path, :mysql, :mysqldump
+  mattr_accessor :app_root, :tmp_path, :mysql, :mysqldump, :configs
   
   class Engine < Rails::Engine
 
@@ -18,6 +18,8 @@ module Myreplicator
       else
         Myreplicator.tmp_path = yml["myreplicator"]["tmp_path"]
       end
+      
+      Myreplicator.configs = yml
     end
 
   end

@@ -15,13 +15,16 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
+
       cmd = Myreplicator.mysqldump
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
       cmd += "-h#{db_configs(db)["host"]} " if db_configs(db)["host"]
       cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
-      cmd += "--result-file=#{options[:filepath]} "
+      cmd += "--tab=#{options[:filepath]} "
+      cmd += "--fields-enclosed-by=\'\"\' "
+      cmd += "--fields-escaped-by=\'\\\\\' "
 
       puts cmd
       return cmd

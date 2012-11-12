@@ -19,7 +19,7 @@ module Myreplicator
     attr_reader :filename
     
     def export
-      exporter = MysqlExporter.new      
+      exporter = MysqlExporter.new
       exporter.export_table self
     end
 
@@ -45,6 +45,34 @@ module Myreplicator
     def exec_on_source sql
       result = SourceDb.exec_sql(self.source_schema, sql)
       return result
+    end
+
+    def ssh_to_source
+      puts "Connecting SSH..."
+      Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                     Myreplicator.configs[self.source_schema]["ssh_user"],
+                     Myreplicator.configs[self.source_schema]["ssh_password"]) do |ssh|
+        
+        puts "SSH connected"
+
+        yield ssh
+
+        ssh.close
+      end
+    end
+
+    def sftp_to_source
+      puts "Connecting SFTP..."
+      Net::SFTP.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                      Myreplicator.configs[self.source_schema]["ssh_user"],
+                      Myreplicator.configs[self.source_schema]["ssh_password"]) do |sftp|
+
+        puts "SFTP connected"
+
+        yield sftp
+
+        sftp.close
+      end
     end
 
     ##

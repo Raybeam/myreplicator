@@ -3,21 +3,45 @@ require 'json'
 module Myreplicator
   class ExportMetadata
 
-    attr_accessor :export_time, :table, :database, :state, :incremental_col, :export_id, :incremental_val
+    attr_accessor(:export_time, 
+                  :export_finished_at, 
+                  :table, 
+                  :database, 
+                  :state, 
+                  :incremental_col, 
+                  :export_id, 
+                  :incremental_val)
 
     def initialize *args
       options = args.extract_options!
-      load if options[:json] 
-      @export_time = options[:export_time]
-      @table = options[:table]
-      @database = options[:database]
-      @state = options[:state]
-      @incremental_col = options[:incremental_col]
-      @incremental_val = options[:incremental_val]
-      @export_id = options[:export_id]
-      @filepath = options[:filepath]
+      if options[:metadata_path] 
+        load options[:metadata_path] 
+      else
+        set_attributes options
+      end
     end
     
+    def self.record *args
+      options = args.extract_options!
+      options.reverse_merge!(:export_time => Time.now,
+                             :state => "starting")
+      begin
+        metadata = ExportMetadata.new 
+        metadata.set_attributes options
+        metadata.store!
+        
+        yield metadata
+      
+      rescue Exception => e
+        metadata.state = "#{e.message}\n#{e.backtrace}"
+       
+      ensure
+        metadata.export_finished_at = Time.now
+        metadata.state = "finished" if metadata.state == "starting"
+        metadata.store!
+      end
+    end
+
     def to_json
       obj = {
         :export_time => @export_time,
@@ -33,12 +57,28 @@ module Myreplicator
       return obj.to_json
     end
 
-    def store_json json
-      File.open("#{@filepath}.json", 'w') {|f| f.write(json)}
+    def store!
+      Kernel.p self.to_json
+      File.open("#{@filepath}.json", 'w') {|f| f.write(self.to_json)}
     end
 
-    def load
-      JSON.parse(json)
+    def load metadata_path
+      json = File.open(options[:metadata_path], "rb").read
+      hash = JSON.parse(json)
+      Kernel.p hash
+      Kernel.p json
+      set_attributes hash
+    end
+
+    def set_attributes options
+      @export_time = options[:export_time] if options[:export_time]
+      @table = options[:table] if options[:table]
+      @database = options[:database] if options[:database]
+      @state = options[:state] if options[:state] 
+      @incremental_col = options[:incremental_col] if options[:incremental_col]
+      @incremental_val = options[:incremental_val] if options[:incremental_val]
+      @export_id = options[:export_id] if options[:export_id]
+      @filepath = options[:filepath] if options[:filepath]
     end
 
   end
