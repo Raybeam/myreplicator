@@ -11,12 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121108204517) do
-
-  create_table "my_test", :force => true do |t|
-    t.string   "desc",       :limit => 45
-    t.datetime "updated_at"
-  end
+ActiveRecord::Schema.define(:version => 20121113180411) do
 
   create_table "myreplicator_exports", :force => true do |t|
     t.string   "source_schema"
@@ -29,10 +24,14 @@ ActiveRecord::Schema.define(:version => 20121108204517) do
     t.string   "export_type",             :default => "incremental"
     t.string   "s3_path"
     t.string   "cron"
-    t.datetime "last_run"
     t.string   "state",                   :default => "new"
     t.text     "error"
     t.boolean  "active",                  :default => true
+    t.datetime "export_started_at"
+    t.datetime "export_finished_at"
+    t.datetime "load_finished_at"
+    t.datetime "transfer_started_at"
+    t.datetime "transfer_finished_at"
     t.datetime "created_at",                                            :null => false
     t.datetime "updated_at",                                            :null => false
   end

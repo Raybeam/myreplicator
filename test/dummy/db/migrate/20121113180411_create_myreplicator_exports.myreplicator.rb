@@ -12,10 +12,14 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :export_type, :default => "incremental"
       t.string :s3_path
       t.string :cron
-      t.datetime :last_run, :default => nil
       t.string :state, :default => "new"
       t.text :error
       t.boolean :active, :default => true
+      t.datetime :export_started_at, :default => nil
+      t.datetime :export_finished_at, :default => nil
+      t.datetime :load_finished_at, :default => nil
+      t.datetime :transfer_started_at, :default => nil
+      t.datetime :transfer_finished_at, :default => nil
       t.timestamps
     end  
     add_index :myreplicator_exports, [:source_schema, :destination_schema, :table_name], :unique => true, :name => "unique_index"
