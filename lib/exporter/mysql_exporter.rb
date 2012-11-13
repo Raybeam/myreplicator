@@ -24,7 +24,7 @@ module Myreplicator
     end
 
     def filepath
-      File.join(Myreplicator.tmp_path, @export_obj.filename)
+      File.join(Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"], @export_obj.filename)
     end
 
     def initial_export metadata
@@ -33,7 +33,12 @@ module Myreplicator
                                   :flags => flags,
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
-      result = `#{cmd}`
+      result = ""
+
+      @export_obj.ssh_to_source do |ssh|
+        result = ssh.exec!(cmd)
+      end
+
       raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
     end
 

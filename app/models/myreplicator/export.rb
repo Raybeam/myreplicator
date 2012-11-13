@@ -51,7 +51,7 @@ module Myreplicator
       puts "Connecting SSH..."
       Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
                      Myreplicator.configs[self.source_schema]["ssh_user"],
-                     Myreplicator.configs[self.source_schema]["ssh_password"]) do |ssh|
+                     :password => Myreplicator.configs[self.source_schema]["ssh_password"]) do |ssh|
         
         puts "SSH connected"
 
@@ -65,7 +65,7 @@ module Myreplicator
       puts "Connecting SFTP..."
       Net::SFTP.start(Myreplicator.configs[self.source_schema]["ssh_host"],
                       Myreplicator.configs[self.source_schema]["ssh_user"],
-                      Myreplicator.configs[self.source_schema]["ssh_password"]) do |sftp|
+                      :password => Myreplicator.configs[self.source_schema]["ssh_password"]) do |sftp|
 
         puts "SFTP connected"
 
