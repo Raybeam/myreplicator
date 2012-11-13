@@ -22,9 +22,10 @@ module Myreplicator
       cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
-      cmd += "--tab=#{options[:filepath]} "
-      cmd += "--fields-enclosed-by=\'\"\' "
-      cmd += "--fields-escaped-by=\'\\\\\' "
+      cmd += "--result-file=#{options[:filepath]} "
+      # cmd += "--tab=#{options[:filepath]} "
+      # cmd += "--fields-enclosed-by=\'\"\' "
+      # cmd += "--fields-escaped-by=\'\\\\\' "
 
       puts cmd
       return cmd
