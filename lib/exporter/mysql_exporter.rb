@@ -34,11 +34,18 @@ module Myreplicator
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
       result = ""
-
+      puts "before block"
       @export_obj.ssh_to_source do |ssh|
+        metadata.ssh = ssh
+        puts "meta in exporter"
+        Kernel.p metadata.ssh
+        metadata.state = "FAILED"
+        metadata.store!
         result = ssh.exec!(cmd)
       end
-
+      puts "after"
+      Kernel.p metadata.ssh
+      Kernel.p metadata.state
       raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
     end
 

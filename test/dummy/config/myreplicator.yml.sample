@@ -13,3 +13,9 @@ okl_dev:
   ssh_user: guest
   ssh_password: sasan
   ssh_tmp_dir: /home/guest
+
+okl_test:
+  ssh_host: 54.243.176.8
+  ssh_user: ubuntu
+  ssh_private_key: ~/.ssh/oklbi-team.pem
+  ssh_tmp_dir: /home/ubuntu/myreplicator_tmp

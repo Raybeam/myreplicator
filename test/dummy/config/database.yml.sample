@@ -17,6 +17,13 @@ okl_dev:
   password: sasan
   host: 127.0.0.1
 
+okl_test:
+  adapter: mysql2
+  database: okl_test
+  username: sasan
+  password: sas
+  host: 127.0.0.1
+
 destination_db:
   adapter: mysql2
   database: raw_sources

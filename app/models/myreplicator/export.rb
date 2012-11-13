@@ -49,10 +49,7 @@ module Myreplicator
 
     def ssh_to_source
       puts "Connecting SSH..."
-      Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
-                     Myreplicator.configs[self.source_schema]["ssh_user"],
-                     :password => Myreplicator.configs[self.source_schema]["ssh_password"]) do |ssh|
-        
+      connection_factory(:ssh) do |ssh|      
         puts "SSH connected"
 
         yield ssh
@@ -63,15 +60,39 @@ module Myreplicator
 
     def sftp_to_source
       puts "Connecting SFTP..."
-      Net::SFTP.start(Myreplicator.configs[self.source_schema]["ssh_host"],
-                      Myreplicator.configs[self.source_schema]["ssh_user"],
-                      :password => Myreplicator.configs[self.source_schema]["ssh_password"]) do |sftp|
-
+      connection_factory(:sftp) do |sftp|
         puts "SFTP connected"
 
         yield sftp
 
         sftp.close
+      end
+    end
+
+    def connection_factory type
+      case type
+      when :ssh
+        if Myreplicator.configs[self.source_schema].has_key? "ssh_password"
+          return Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                                 Myreplicator.configs[self.source_schema]["ssh_user"],
+                                 :password => Myreplicator.configs[self.source_schema]["ssh_password"])
+
+        elsif(Myreplicator.configs[self.source_schema].has_key? "ssh_private_key")
+          return Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                                 Myreplicator.configs[self.source_schema]["ssh_user"],
+                                 :keys => [Myreplicator.configs[self.source_schema]["ssh_private_key"]])        
+        end
+      when :sftp
+        if Myreplicator.configs[self.source_schema].has_key? "ssh_password"
+          return Net::SFTP.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                                 Myreplicator.configs[self.source_schema]["ssh_user"],
+                                 :password => Myreplicator.configs[self.source_schema]["ssh_password"])
+
+        elsif(Myreplicator.configs[self.source_schema].has_key? "ssh_private_key")
+          return Net::SFTP.start(Myreplicator.configs[self.source_schema]["ssh_host"],
+                                 Myreplicator.configs[self.source_schema]["ssh_user"],
+                                 :keys => [Myreplicator.configs[self.source_schema]["ssh_private_key"]])
+        end          
       end
     end
 

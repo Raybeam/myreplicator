@@ -10,7 +10,8 @@ module Myreplicator
                   :state, 
                   :incremental_col, 
                   :export_id, 
-                  :incremental_val)
+                  :incremental_val,
+                  :ssh)
 
     def initialize *args
       options = args.extract_options!
@@ -28,16 +29,17 @@ module Myreplicator
       begin
         metadata = ExportMetadata.new 
         metadata.set_attributes options
-        metadata.store!
-        
+
         yield metadata
       
       rescue Exception => e
         metadata.state = "#{e.message}\n#{e.backtrace}"
-       
+        raise e
       ensure
         metadata.export_finished_at = Time.now
         metadata.state = "finished" if metadata.state == "starting"
+        puts "meta in ensure"      
+        Kernel.p metadata.ssh
         metadata.store!
       end
     end
@@ -59,7 +61,12 @@ module Myreplicator
 
     def store!
       Kernel.p self.to_json
-      File.open("#{@filepath}.json", 'w') {|f| f.write(self.to_json)}
+      cmd = "cat #{self.to_json} > #{@filepath}.json"
+      puts cmd
+      puts "meta in store!"      
+      Kernel.p @ssh
+      @ssh.exec!(cmd)
+      # File.open("#{@filepath}.json", 'w') {|f| f.write(self.to_json)}
     end
 
     def load metadata_path
@@ -79,6 +86,7 @@ module Myreplicator
       @incremental_val = options[:incremental_val] if options[:incremental_val]
       @export_id = options[:export_id] if options[:export_id]
       @filepath = options[:filepath] if options[:filepath]
+      @ssh = nil
     end
 
   end
