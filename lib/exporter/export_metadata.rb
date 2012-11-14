@@ -11,7 +11,11 @@ module Myreplicator
                   :incremental_col, 
                   :export_id, 
                   :incremental_val,
-                  :ssh)
+                  :ssh,
+                  :export_type,
+                  :on_duplicate,
+                  :filepath,
+                  :zipped)
 
     def initialize *args
       options = args.extract_options!
@@ -32,15 +36,14 @@ module Myreplicator
 
         yield metadata
       
-      rescue Exception => e
+      rescue Exceptions::ExportError => e
         metadata.state = "#{e.message}\n#{e.backtrace}"
-        raise e
+
       ensure
         metadata.export_finished_at = Time.now
-        metadata.state = "finished" if metadata.state == "starting"
-        puts "meta in ensure"      
-        Kernel.p metadata.ssh
+        metadata.state = "failed" if metadata.state == "starting"
         metadata.store!
+        metadata.ssh.close
       end
     end
 
@@ -55,18 +58,14 @@ module Myreplicator
         :export_id => @export_id,
         :filepath => @filepath
       }
-
       return obj.to_json
     end
 
     def store!
-      Kernel.p self.to_json
-      cmd = "cat #{self.to_json} > #{@filepath}.json"
+      cmd = "echo \"#{self.to_json.gsub("\"","\\\\\"")}\" > #{@filepath}.json"
       puts cmd
-      puts "meta in store!"      
-      Kernel.p @ssh
-      @ssh.exec!(cmd)
-      # File.open("#{@filepath}.json", 'w') {|f| f.write(self.to_json)}
+      result = @ssh.exec!(cmd)
+      puts result
     end
 
     def load metadata_path
@@ -86,6 +85,9 @@ module Myreplicator
       @incremental_val = options[:incremental_val] if options[:incremental_val]
       @export_id = options[:export_id] if options[:export_id]
       @filepath = options[:filepath] if options[:filepath]
+      @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
+      @export_type = options[f:export_type] if options[:export_type]
+      @zipped = false
       @ssh = nil
     end
 

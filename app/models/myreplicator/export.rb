@@ -49,13 +49,14 @@ module Myreplicator
 
     def ssh_to_source
       puts "Connecting SSH..."
-      connection_factory(:ssh) do |ssh|      
-        puts "SSH connected"
+      return connection_factory(:ssh) 
+      # do |ssh|      
+      #   puts "SSH connected"
 
-        yield ssh
+      #   yield ssh
 
-        ssh.close
-      end
+      #   ssh.close
+      # end
     end
 
     def sftp_to_source

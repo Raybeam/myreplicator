@@ -15,6 +15,8 @@ module Myreplicator
                             :filepath => filepath) do |metadata|
 
         if @export_obj.state == "new"
+          @export_obj.state = "running"
+          
           initial_export metadata
         elsif !@export_obj.incremental_column.blank?
           incremental_export metadata
@@ -23,30 +25,31 @@ module Myreplicator
       end
     end
 
+    ##TO DO
+    def update_export *args
+      
+    end
+
     def filepath
       File.join(Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"], @export_obj.filename)
     end
 
+    ##
+    # Exports Table using mysqldump. This method is invoked only once.
+    # Dumps with create options, no need to create table manaully
+    ##
     def initial_export metadata
       flags = ["create-options", "single-transaction"]       
       cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
                                   :flags => flags,
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
-      result = ""
-      puts "before block"
-      @export_obj.ssh_to_source do |ssh|
-        metadata.ssh = ssh
-        puts "meta in exporter"
-        Kernel.p metadata.ssh
-        metadata.state = "FAILED"
-        metadata.store!
-        result = ssh.exec!(cmd)
+
+      result = execute_export(cmd, metadata)
+      
+      unless result.nil?
+        raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
       end
-      puts "after"
-      Kernel.p metadata.ssh
-      Kernel.p metadata.state
-      raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
     end
 
     def incremental_export metadata
@@ -74,17 +77,39 @@ module Myreplicator
       SqlCommands.mysqldump(:db => @export_obj.source_schema,
                             :filepath => filepath)    
     end
+    
+    ##
+    # Executes export command via ssh on the source DB
+    # Updates/interacts with the metadata object
+    ##
+    def execute_export cmd, metadata
+      ssh = @export_obj.ssh_to_source
+      metadata.ssh = ssh
+      metadata.store!
+      result = ""
 
-    def create_table
-      Myreplicator::SqlCommands.mysqldump(:db => db, 
-                                          :flags => ["create-options", "compact"],
-                                          :filepath => filepath)
+      begin
+        # Execute Export command on the source DB server
+        result = ssh.exec!(cmd)
+        
+        # zip the output
+        r = ssh.exec!(zipfile)
+        puts r
+      ensure
+        metadata.state = "exported"
+        metadata.zipped = true
+      end
+
+      return result
     end
 
+    ##
+    # zips the file on the source DB server
+    ##
     def zipfile
-      cmd = "cd #{Myreplicator.tmp_path}; gzip #{filename}"
+      cmd = "cd #{Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"]}; gzip #{@export_obj.filename}"
       puts cmd
-      `#{cmd}`
+      return cmd
     end
     
   end
