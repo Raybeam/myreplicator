@@ -1,0 +1,10 @@
+<%= render :partial => 'home_menu' %>
+<% @exports.each do |ex| %>
+<div class="error-display">
+<span><em>table name:</em> <%= ex.table_name %></span>
+<span><em>source schema:</em><%=  ex.source_schema %></span>
+<span><em>updated at:</em><%= ex.updated_at.strftime("%Y-%m-%d %H:%M") %></span>
+<span><em>error:</em></span>
+<pre><%= ex.error %></pre>
+</div>
+<% end %>
