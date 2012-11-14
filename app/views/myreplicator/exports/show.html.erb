@@ -1,11 +1,13 @@
 <%= link_to content_tag(:span, 'edit export'), edit_export_path(@export), :class =>'btn right main edit' %>
 <h2>Review Export</h2>
 <ul id="export-review">
-  <% @export.attributes.each do |key,val| %>
+  <% @export.attributes.sort{|a,b| a[0] <=> b[0]}.each do |key,val| %>
     <% type = @export.column_for_attribute(key).type %>
     <li><span><%= key.gsub("_"," ") %> : </span>
       <%- if type == :datetime -%>
-      <%= val.strftime("%B #{val.day.ordinalize}, %Y %I:%M %p") -%>
+        <%- unless val.blank? -%>
+          <%= val.strftime("%B #{val.day.ordinalize}, %Y %I:%M %p") -%>
+        <%- end -%>
       <%- else -%>
         <% if key == 'cron' %>
           <em class="cron" data-cron="<%= val %>" title=""><%= val %></em>
