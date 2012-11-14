@@ -17,6 +17,11 @@ module Myreplicator
                   :filepath,
                   :zipped)
 
+    attr_reader :failure_callbacks
+    attr_reader :success_callbacks
+    attr_reader :ensure_callbacks
+    attr_reader :ignore_callbacks
+
     def initialize *args
       options = args.extract_options!
       if options[:metadata_path] 
@@ -29,21 +34,76 @@ module Myreplicator
     def self.record *args
       options = args.extract_options!
       options.reverse_merge!(:export_time => Time.now,
-                             :state => "starting")
+                             :state => "running")
       begin
         metadata = ExportMetadata.new 
         metadata.set_attributes options
 
         yield metadata
       
-      rescue Exceptions::ExportError => e
-        metadata.state = "#{e.message}\n#{e.backtrace}"
+      # rescue Exceptions => e
+      #   metadata.state = "failed"
+      #   metadata.error = "#{e.message}\n#{e.backtrace}"
 
-      ensure
-        metadata.export_finished_at = Time.now
-        metadata.state = "failed" if metadata.state == "starting"
-        metadata.store!
-        metadata.ssh.close
+      #   metadata.run_failure_callbacks
+
+      # ensure
+      #   metadata.export_finished_at = Time.now
+      #   metadata.state = "failed" if metadata.state == "running"
+      #   metadata.store!
+      #   metadata.ssh.close
+
+      #   metadata.run_ensure_callbacks
+      end
+    end
+
+    # Add a callback to run on failure of the 
+    # export
+    def on_failure *args, &block
+      puts "ON FAILURE....."
+      if block_given?
+        @failure_callbacks << block
+      else
+        @failure_callbacks << args.shift
+      end
+    end
+
+    # Adds a callback that runs if the
+    # export is already running
+    def on_ignore *args, &block
+      puts "ON IGNORE....."
+      if block_given?
+        @ignore_callbacks << block
+      else
+        @ignore_callbacks << args.shift
+      end
+    end
+
+    # :nodoc:
+    def run_ensure_callbacks
+      ensure_callbacks.each do | ec |
+        ec.call(self)
+      end
+    end
+
+    # :nodoc:
+    def run_ignore_callbacks
+      ignore_callbacks.each do | ic |
+        ic.call(self)
+      end
+    end
+
+    # :nodoc:
+    def run_success_callbacks
+      success_callbacks.each do | sc |
+        sc.call(self)
+      end
+    end
+
+    # :nodoc:
+    def run_failure_callbacks
+      failure_callbacks.each do | fc |
+        fc.call(self)
       end
     end
 
@@ -89,6 +149,11 @@ module Myreplicator
       @export_type = options[f:export_type] if options[:export_type]
       @zipped = false
       @ssh = nil
+
+      @success_callbacks = []
+      @failure_callbacks = []
+      @ensure_callbacks = []
+      @ignore_callbacks = []
     end
 
   end

@@ -16,6 +16,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.boolean :active, :default => true
       t.datetime :export_started_at, :default => nil
       t.datetime :export_finished_at, :default => nil
+      t.datetime :load_started_at, :default => nil
       t.datetime :load_finished_at, :default => nil
       t.datetime :transfer_started_at, :default => nil
       t.datetime :transfer_finished_at, :default => nil

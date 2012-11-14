@@ -15,21 +15,24 @@ module Myreplicator
                             :filepath => filepath) do |metadata|
 
         if @export_obj.state == "new"
-          @export_obj.state = "running"
-          
+          update_export(:state => "running")
           initial_export metadata
         elsif !@export_obj.incremental_column.blank?
+          update_export(:state => "running") || @export_obj.state == "failed"
           incremental_export metadata
         end
 
       end
     end
 
-    ##TO DO
     def update_export *args
-      
+      options = args.extract_options!
+      @export_obj.update_attributes! options
     end
 
+    ##
+    # File path on remote server
+    ##
     def filepath
       File.join(Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"], @export_obj.filename)
     end
@@ -38,6 +41,7 @@ module Myreplicator
     # Exports Table using mysqldump. This method is invoked only once.
     # Dumps with create options, no need to create table manaully
     ##
+
     def initial_export metadata
       flags = ["create-options", "single-transaction"]       
       cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
@@ -45,12 +49,26 @@ module Myreplicator
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
 
+      metadata.on_failure do |m|
+        update_export(:state => "failed", :export_finished_at => Time.now)
+      end
+        
+      update_export(:state => "exporting", :export_started_at => Time.now)
+
       result = execute_export(cmd, metadata)
-      
+
+      update_export(:state => "export_completed", :export_finished_at => Time.now)
+
       unless result.nil?
         raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
       end
     end
+
+    ##
+    # Exports table incrementally, using the incremental column specified
+    # If column is not specified, it will export the entire table 
+    # Maximum value of the incremental column is recorded BEFORE export starts
+    ##
 
     def incremental_export metadata
       max_value = @export_obj.max_value
@@ -60,16 +78,27 @@ module Myreplicator
       Kernel.p max_value
       Kernel.p @export_obj.incremental_value
       puts "Both must be the same"
-
-      begin
-        sql = SqlCommands.export_sql(:db => @export_obj.source_schema,
-                                     :table => @export_obj.table_name,
-                                     :incremental_col => @export_obj.incremental_column,
-                                     :incremental_val => @export_obj.incremental_value)      
+      sql = SqlCommands.export_sql(:db => @export_obj.source_schema,
+                                   :table => @export_obj.table_name,
+                                   :incremental_col => @export_obj.incremental_column,
+                                   :incremental_val => @export_obj.incremental_value)      
+      cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
+                                     :filepath => filepath,
+                                     :sql => sql)
+      
+      
+      update_export(:state => "exporting", :export_started_at => Time.now)
+      
+      metadata.on_failure do |m|
+        update_export(:state => "failed", :export_finished_at => Time.now)
+      end
         
-        SqlCommands.mysql_export(:db => @export_obj.source_schema,
-                                 :filepath => filepath,
-                                 :sql => sql)
+      result = execute_export(cmd, metadata)
+      
+      update_export(:state => "export_completed", :export_finished_at => Time.now)
+
+      unless result.nil?
+        raise Exceptions::ExportError.new("Incremental Export Error") if result.length > 0
       end
     end
 
@@ -83,6 +112,7 @@ module Myreplicator
     # Updates/interacts with the metadata object
     ##
     def execute_export cmd, metadata
+      puts "IN EXPORT......."
       ssh = @export_obj.ssh_to_source
       metadata.ssh = ssh
       metadata.store!
