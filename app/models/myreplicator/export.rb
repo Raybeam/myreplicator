@@ -14,7 +14,14 @@ module Myreplicator
                     :last_run,
                     :state,
                     :error,
-                    :active)
+                    :active,
+                    :export_started_at,
+                    :export_finished_at,
+                    :load_started_at,
+                    :load_finished_at,
+                    :transfer_started_at,
+                    :transfer_finished_at
+                    )
 
     attr_reader :filename
     

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121113180411) do
+ActiveRecord::Schema.define(:version => 20121114235919) do
 
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
@@ -34,6 +34,7 @@ ActiveRecord::Schema.define(:version => 20121113180411) do
     t.boolean  "active",                  :default => true
     t.datetime "export_started_at"
     t.datetime "export_finished_at"
+    t.datetime "load_started_at"
     t.datetime "load_finished_at"
     t.datetime "transfer_started_at"
     t.datetime "transfer_finished_at"
