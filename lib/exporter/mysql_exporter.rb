@@ -14,14 +14,39 @@ module Myreplicator
                             :database => @export_obj.source_schema,
                             :filepath => filepath) do |metadata|
 
-        if @export_obj.state == "new"
-          update_export(:state => "running")
-          initial_export metadata
-        elsif !@export_obj.incremental_column.blank?
-          update_export(:state => "running") || @export_obj.state == "failed"
-          incremental_export metadata
+        metadata.on_failure do |m|
+          update_export(:state => "failed", :export_finished_at => Time.now)
         end
 
+        prepare metadata
+
+        if @export_obj.state == "new"
+          update_export(:state => "running", :exporter_pid => Process.pid)
+          initial_export metadata
+          wrapup
+        elsif !is_running?
+          update_export(:state => "running", :exporter_pid => Process.pid)
+          incremental_export metadata
+          wrapup
+        end
+        
+      end
+    end
+    
+    def prepare metadata
+      ssh = @export_obj.ssh_to_source
+      metadata.ssh = ssh
+    end
+    
+    def is_running?
+      return false if @export_obj.state != "running"
+      begin
+        Process.getpgid(@export_obj.exporter_pid)
+        puts "IS RUNNING"
+        return true
+      rescue Errno::ESRCH
+        puts "IS NOT RUNNING"
+        return false
       end
     end
 
@@ -48,20 +73,11 @@ module Myreplicator
                                   :flags => flags,
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
-
-      metadata.on_failure do |m|
-        update_export(:state => "failed", :export_finished_at => Time.now)
-      end
         
       update_export(:state => "exporting", :export_started_at => Time.now)
-
       result = execute_export(cmd, metadata)
 
-      update_export(:state => "export_completed", :export_finished_at => Time.now)
-
-      unless result.nil?
-        raise Exceptions::ExportError.new("Initial Dump error") if result.length > 0
-      end
+      check_result(result, 0)
     end
 
     ##
@@ -72,64 +88,57 @@ module Myreplicator
 
     def incremental_export metadata
       max_value = @export_obj.max_value
+      @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
 
-      @export_obj.update_max_val if @export_obj.incremental_value.blank?   
-
-      Kernel.p max_value
-      Kernel.p @export_obj.incremental_value
-      puts "Both must be the same"
       sql = SqlCommands.export_sql(:db => @export_obj.source_schema,
                                    :table => @export_obj.table_name,
                                    :incremental_col => @export_obj.incremental_column,
-                                   :incremental_val => @export_obj.incremental_value)      
+                                   :incremental_col_type => @export_obj.incremental_column_type,
+                                   :incremental_val => @export_obj.max_incremental_value)      
+
       cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
                                      :filepath => filepath,
                                      :sql => sql)
       
-      
-      update_export(:state => "exporting", :export_started_at => Time.now)
-      
-      metadata.on_failure do |m|
-        update_export(:state => "failed", :export_finished_at => Time.now)
-      end
-        
+      update_export(:state => "exporting", :export_started_at => Time.now)  
       result = execute_export(cmd, metadata)
-      
+       check_result(result, 0)
+    end
+
+
+    ##
+    # Completes an export process
+    # Zips files, updates states etc
+    ##
+    def wrapup 
+      puts "Zipping..."
+      zip_result = metadata.ssh.exec!(zipfile)
+      puts zip_result
       update_export(:state => "export_completed", :export_finished_at => Time.now)
+      puts "Done.."
+    end
 
+    ##
+    # Checks the returned resut from SSH CMD
+    # Size specifies if there should be any returned results or not
+    ##
+    def check_result result, size
       unless result.nil?
-        raise Exceptions::ExportError.new("Incremental Export Error") if result.length > 0
-      end
+        raise Exceptions::ExportError.new("Export Error") if result.length > 0
+      end     
     end
 
-    def dump_export metadata
-      SqlCommands.mysqldump(:db => @export_obj.source_schema,
-                            :filepath => filepath)    
-    end
-    
     ##
     # Executes export command via ssh on the source DB
     # Updates/interacts with the metadata object
     ##
     def execute_export cmd, metadata
-      puts "IN EXPORT......."
-      ssh = @export_obj.ssh_to_source
-      metadata.ssh = ssh
       metadata.store!
       result = ""
 
-      begin
-        # Execute Export command on the source DB server
-        result = ssh.exec!(cmd)
-        
-        # zip the output
-        r = ssh.exec!(zipfile)
-        puts r
-      ensure
-        metadata.state = "exported"
-        metadata.zipped = true
-      end
-
+      # Execute Export command on the source DB server
+      result = metadata.ssh.exec!(cmd)
+      
       return result
     end
 

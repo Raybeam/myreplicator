@@ -38,29 +38,28 @@ module Myreplicator
       begin
         metadata = ExportMetadata.new 
         metadata.set_attributes options
-
+        
         yield metadata
       
-      # rescue Exceptions => e
-      #   metadata.state = "failed"
-      #   metadata.error = "#{e.message}\n#{e.backtrace}"
+      rescue Exceptions => e
+        metadata.state = "failed"
+        metadata.error = "#{e.message}\n#{e.backtrace}"
+        
+        metadata.run_failure_callbacks
+        puts "CALLING FAILURE CALLBACKS"
+      ensure
+        metadata.export_finished_at = Time.now
+        metadata.state = "failed" if metadata.state == "running"
+        metadata.store!
+        metadata.ssh.close
 
-      #   metadata.run_failure_callbacks
-
-      # ensure
-      #   metadata.export_finished_at = Time.now
-      #   metadata.state = "failed" if metadata.state == "running"
-      #   metadata.store!
-      #   metadata.ssh.close
-
-      #   metadata.run_ensure_callbacks
+        metadata.run_ensure_callbacks
       end
     end
 
     # Add a callback to run on failure of the 
     # export
     def on_failure *args, &block
-      puts "ON FAILURE....."
       if block_given?
         @failure_callbacks << block
       else
@@ -71,7 +70,6 @@ module Myreplicator
     # Adds a callback that runs if the
     # export is already running
     def on_ignore *args, &block
-      puts "ON IGNORE....."
       if block_given?
         @ignore_callbacks << block
       else
@@ -81,28 +79,28 @@ module Myreplicator
 
     # :nodoc:
     def run_ensure_callbacks
-      ensure_callbacks.each do | ec |
+      @ensure_callbacks.each do | ec |
         ec.call(self)
       end
     end
 
     # :nodoc:
     def run_ignore_callbacks
-      ignore_callbacks.each do | ic |
+      @ignore_callbacks.each do | ic |
         ic.call(self)
       end
     end
 
     # :nodoc:
     def run_success_callbacks
-      success_callbacks.each do | sc |
+      @success_callbacks.each do | sc |
         sc.call(self)
       end
     end
 
     # :nodoc:
     def run_failure_callbacks
-      failure_callbacks.each do | fc |
+      @failure_callbacks.each do | fc |
         fc.call(self)
       end
     end

@@ -16,9 +16,12 @@ module Myreplicator
         end
       end
 
+      # Database host when ssh'ed into the db server
+      db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
+
       cmd = Myreplicator.mysqldump
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
-      cmd += "-h#{db_configs(db)["host"]} " if db_configs(db)["host"]
+      cmd += "-h#{db_host} " if db_configs(db)["host"]
       cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
@@ -34,7 +37,11 @@ module Myreplicator
     def self.db_configs db
       ActiveRecord::Base.configurations[db]
     end
-    
+
+    def self.ssh_configs db
+      Myreplicator.configs[db]
+    end
+
     def self.dump_flags
       {"add-locks" => true,
         "compact" => false,
@@ -52,6 +59,8 @@ module Myreplicator
       options = args.extract_options!
       options.reverse_merge! :flags => []
       db = options[:db]
+      # Database host when ssh'ed into the db server
+      db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
 
       flags = ""
 
@@ -65,9 +74,10 @@ module Myreplicator
 
       cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
-      cmd += "-h#{db_configs(db)["host"]} -P#{db_configs(db)["port"]} "
+      cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
+      cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
       cmd += "--execute=\"#{options[:sql]}\" "
-      cmd += "--tee=#{options[:filepath]} "
+      cmd += " > #{options[:filepath]} "
       
       puts cmd
       return cmd
@@ -85,7 +95,11 @@ module Myreplicator
       sql = "SELECT * FROM #{options[:db]}.#{options[:table]} " 
       
       if options[:incremental_col] && options[:incremental_val]
-        sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+        if options[:incremental_col_type] == "datetime"
+          sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
+        else
+          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+        end
       end
 
       return sql

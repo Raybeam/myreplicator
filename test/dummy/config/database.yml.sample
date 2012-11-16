@@ -20,8 +20,8 @@ okl_dev:
 okl_test:
   adapter: mysql2
   database: okl_test
-  username: sasan
-  password: sas
+  username: xbox
+  password: okl
   host: 127.0.0.1
 
 destination_db:

@@ -6,6 +6,7 @@ require 'active_record/fixtures'
                                                      :source_schema => "okl_test",
                                                      :destination_schema => "myreplicator",
                                                      :incremental_column => "updated_at",    
+                                                     :incremental_column_type => "datetime",    
                                                      :cron => "2 * * * *")
 end
 

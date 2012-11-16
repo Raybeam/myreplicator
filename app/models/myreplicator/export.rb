@@ -6,6 +6,7 @@ module Myreplicator
                     :destination_schema, 
                     :table_name, 
                     :incremental_column, 
+                    :incremental_column_type, 
                     :max_incremental_value, 
                     :export_to, 
                     :export_type,
@@ -20,14 +21,17 @@ module Myreplicator
                     :load_started_at,
                     :load_finished_at,
                     :transfer_started_at,
-                    :transfer_finished_at
+                    :transfer_finished_at,
+                    :exporter_pid,
+                    :transporter_pid,
+                    :loader_pid
                     )
 
     attr_reader :filename
     
     def export
       exporter = MysqlExporter.new
-      exporter.export_table self
+      exporter.export_table self    
     end
 
     def filename
@@ -75,13 +79,13 @@ module Myreplicator
       when :ssh
         if Myreplicator.configs[self.source_schema].has_key? "ssh_password"
           return Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
-                                 Myreplicator.configs[self.source_schema]["ssh_user"],
-                                 :password => Myreplicator.configs[self.source_schema]["ssh_password"])
+                                Myreplicator.configs[self.source_schema]["ssh_user"],
+                                :password => Myreplicator.configs[self.source_schema]["ssh_password"])
 
         elsif(Myreplicator.configs[self.source_schema].has_key? "ssh_private_key")
           return Net::SSH.start(Myreplicator.configs[self.source_schema]["ssh_host"],
-                                 Myreplicator.configs[self.source_schema]["ssh_user"],
-                                 :keys => [Myreplicator.configs[self.source_schema]["ssh_private_key"]])        
+                                Myreplicator.configs[self.source_schema]["ssh_user"],
+                                :keys => [Myreplicator.configs[self.source_schema]["ssh_private_key"]])        
         end
       when :sftp
         if Myreplicator.configs[self.source_schema].has_key? "ssh_password"

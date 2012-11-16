@@ -15,6 +15,9 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.string :state, :default => "new"
       t.text :error
       t.boolean :active, :default => true
+      t.integer :exporter_pid
+      t.integer :transporter_pid
+      t.integer :loader_pid
       t.datetime :export_started_at, :default => nil
       t.datetime :export_finished_at, :default => nil
       t.datetime :load_started_at, :default => nil

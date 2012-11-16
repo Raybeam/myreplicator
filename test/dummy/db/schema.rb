@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121114235919) do
+ActiveRecord::Schema.define(:version => 20121115194022) do
 
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
@@ -32,6 +32,9 @@ ActiveRecord::Schema.define(:version => 20121114235919) do
     t.string   "state",                   :default => "new"
     t.text     "error"
     t.boolean  "active",                  :default => true
+    t.integer  "exporter_pid"
+    t.integer  "transporter_pid"
+    t.integer  "loader_pid"
     t.datetime "export_started_at"
     t.datetime "export_finished_at"
     t.datetime "load_started_at"
