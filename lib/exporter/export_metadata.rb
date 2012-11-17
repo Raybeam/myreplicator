@@ -15,7 +15,8 @@ module Myreplicator
                   :export_type,
                   :on_duplicate,
                   :filepath,
-                  :zipped)
+                  :zipped,
+                  :error)
 
     attr_reader :failure_callbacks
     attr_reader :success_callbacks
@@ -31,6 +32,10 @@ module Myreplicator
       end
     end
     
+    ##
+    # Keeps track of the state of the export
+    # Store itself in a JSON file on exit
+    ##
     def self.record *args
       options = args.extract_options!
       options.reverse_merge!(:export_time => Time.now,
@@ -40,13 +45,14 @@ module Myreplicator
         metadata.set_attributes options
         
         yield metadata
-      
-      rescue Exceptions => e
-        metadata.state = "failed"
-        metadata.error = "#{e.message}\n#{e.backtrace}"
-        
+
+        metadata.run_success_callbacks
+
+      rescue Exceptions::ExportError => e
+        metadata.state = "failed"     
+        metadata.error =  "#{e.message}\n#{e.backtrace}"
         metadata.run_failure_callbacks
-        puts "CALLING FAILURE CALLBACKS"
+
       ensure
         metadata.export_finished_at = Time.now
         metadata.state = "failed" if metadata.state == "running"
@@ -74,6 +80,16 @@ module Myreplicator
         @ignore_callbacks << block
       else
         @ignore_callbacks << args.shift
+      end
+    end
+
+    # Adds a callback that runs if the
+    # export is completed successfully
+    def on_ignore *args, &block
+      if block_given?
+        @success_callbacks << block
+      else
+        @success_callbacks << args.shift
       end
     end
 

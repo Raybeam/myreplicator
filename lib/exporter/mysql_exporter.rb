@@ -15,7 +15,7 @@ module Myreplicator
                             :filepath => filepath) do |metadata|
 
         metadata.on_failure do |m|
-          update_export(:state => "failed", :export_finished_at => Time.now)
+          update_export(:state => "failed", :export_finished_at => Time.now, :error => metadata.error)
         end
 
         prepare metadata
@@ -23,11 +23,14 @@ module Myreplicator
         if @export_obj.state == "new"
           update_export(:state => "running", :exporter_pid => Process.pid)
           initial_export metadata
-          wrapup
+          wrapup metadata
         elsif !is_running?
           update_export(:state => "running", :exporter_pid => Process.pid)
-          incremental_export metadata
-          wrapup
+          max_value = incremental_export(metadata)
+          metadata.on_success do |m|
+            update_export(:state => "failed", :export_finished_at => Time.now, :error => metadata.error)
+          end
+          wrapup metadata
         end
         
       end
@@ -102,7 +105,7 @@ module Myreplicator
       
       update_export(:state => "exporting", :export_started_at => Time.now)  
       result = execute_export(cmd, metadata)
-       check_result(result, 0)
+      check_result(result, 0)
     end
 
 
@@ -110,7 +113,7 @@ module Myreplicator
     # Completes an export process
     # Zips files, updates states etc
     ##
-    def wrapup 
+    def wrapup metadata
       puts "Zipping..."
       zip_result = metadata.ssh.exec!(zipfile)
       puts zip_result
@@ -124,7 +127,7 @@ module Myreplicator
     ##
     def check_result result, size
       unless result.nil?
-        raise Exceptions::ExportError.new("Export Error") if result.length > 0
+        raise Exceptions::ExportError.new("Export Error\n#{result}") if result.length > 0
       end     
     end
 

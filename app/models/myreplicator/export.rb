@@ -43,7 +43,6 @@ module Myreplicator
                                       :db => self.source_schema,
                                       :table => self.table_name)
       result = exec_on_source(sql)
-      Kernel.p result.first.first
 
       return result.first.first
     end
@@ -65,13 +64,7 @@ module Myreplicator
 
     def sftp_to_source
       puts "Connecting SFTP..."
-      connection_factory(:sftp) do |sftp|
-        puts "SFTP connected"
-
-        yield sftp
-
-        sftp.close
-      end
+      return connection_factory(:sftp)
     end
 
     def connection_factory type
