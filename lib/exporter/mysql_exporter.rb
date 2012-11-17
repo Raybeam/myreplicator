@@ -6,7 +6,12 @@ module Myreplicator
       @tmp_dir = File.join(Myreplicator.app_root,"tmp", "myreplicator")
       Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
     end
-
+    
+    ##
+    # Gets an Export object and dumps the data 
+    # Initially using mysqldump
+    # Incrementally using mysql -e afterwards
+    ##
     def export_table export_obj
       @export_obj = export_obj
 
@@ -21,34 +26,43 @@ module Myreplicator
         prepare metadata
 
         if @export_obj.state == "new"
-          update_export(:state => "running", :exporter_pid => Process.pid)
           initial_export metadata
-          wrapup metadata
-        elsif !is_running?
-          update_export(:state => "running", :exporter_pid => Process.pid)
-          max_value = incremental_export(metadata)
           metadata.on_success do |m|
-            update_export(:state => "failed", :export_finished_at => Time.now, :error => metadata.error)
+            metadata.state = "export_completed"
+            wrapup metadata
           end
-          wrapup metadata
+        elsif !is_running?
+          max_value = incremental_export(metadata)
+
+          # Call back that updates the maximum value of incremental col
+          metadata.on_success do |m|
+            metadata.state = "export_completed"
+            wrapup metadata
+            @export_obj.update_max_val(max_value)
+          end
         end
         
       end
     end
     
+    ##
+    # Setups SSH connection to remote host
+    ##
     def prepare metadata
       ssh = @export_obj.ssh_to_source
       metadata.ssh = ssh
     end
     
+    ##
+    # Throws ExportIgnored if the job is still running
+    # Checks the state of the job using PID and state
+    ##
     def is_running?
-      return false if @export_obj.state != "running"
+      return false if @export_obj.state != "exporting"
       begin
         Process.getpgid(@export_obj.exporter_pid)
-        puts "IS RUNNING"
-        return true
+        raise Exceptions::ExportIgnored.new("Ignored")
       rescue Errno::ESRCH
-        puts "IS NOT RUNNING"
         return false
       end
     end
@@ -76,10 +90,10 @@ module Myreplicator
                                   :flags => flags,
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
-        
-      update_export(:state => "exporting", :export_started_at => Time.now)
+      
+      update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
+      puts "Exporting..."
       result = execute_export(cmd, metadata)
-
       check_result(result, 0)
     end
 
@@ -103,7 +117,8 @@ module Myreplicator
                                      :filepath => filepath,
                                      :sql => sql)
       
-      update_export(:state => "exporting", :export_started_at => Time.now)  
+      update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
+      puts "Exporting..."
       result = execute_export(cmd, metadata)
       check_result(result, 0)
     end

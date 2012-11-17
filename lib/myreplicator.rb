@@ -27,6 +27,7 @@ module Myreplicator
   module Exceptions
     class MissingArgs < StandardError; end
     class ExportError < StandardError; end
+    class ExportIgnored < StandardError; end
   end
 
 end

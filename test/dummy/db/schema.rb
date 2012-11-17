@@ -13,11 +13,6 @@
 
 ActiveRecord::Schema.define(:version => 20121115194022) do
 
-  create_table "my_test", :force => true do |t|
-    t.string   "desc",       :limit => 45
-    t.datetime "updated_at"
-  end
-
   create_table "myreplicator_exports", :force => true do |t|
     t.string   "source_schema"
     t.string   "destination_schema"

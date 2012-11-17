@@ -47,9 +47,13 @@ module Myreplicator
       return result.first.first
     end
 
-    def update_max_val
-      self.max_incremental_value = max_value
-      self.save!
+    def update_max_val(max_val = nil)
+      if max_val.nil?
+        self.max_incremental_value = max_value
+      else
+        self.max_incremental_value = max_val
+        self.save!
+      end
     end
 
     def exec_on_source sql

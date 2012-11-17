@@ -39,11 +39,11 @@ module Myreplicator
     def self.record *args
       options = args.extract_options!
       options.reverse_merge!(:export_time => Time.now,
-                             :state => "running")
+                             :state => "exporting")
       begin
         metadata = ExportMetadata.new 
         metadata.set_attributes options
-        
+
         yield metadata
 
         metadata.run_success_callbacks
@@ -53,9 +53,14 @@ module Myreplicator
         metadata.error =  "#{e.message}\n#{e.backtrace}"
         metadata.run_failure_callbacks
 
+      rescue Exceptions::ExportIgnored => e
+        metadata.state = "ignored"
+        metadata.run_ignore_callbacks
+        metadata.filepath = metadata.filepath + ".ignored"
+
       ensure
         metadata.export_finished_at = Time.now
-        metadata.state = "failed" if metadata.state == "running"
+        metadata.state = "failed" if metadata.state == "exporting"
         metadata.store!
         metadata.ssh.close
 
