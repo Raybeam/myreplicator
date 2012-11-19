@@ -3,8 +3,6 @@ module Myreplicator
     
     def initialize *args
       options = args.extract_options!
-      @tmp_dir = File.join(Myreplicator.app_root,"tmp", "myreplicator")
-      Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
     end
     
     ##

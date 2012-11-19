@@ -90,7 +90,7 @@ module Myreplicator
 
     # Adds a callback that runs if the
     # export is completed successfully
-    def on_ignore *args, &block
+    def on_success *args, &block
       if block_given?
         @success_callbacks << block
       else
