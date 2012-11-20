@@ -24,27 +24,20 @@ module Myreplicator
     def download export
       ssh = export.ssh_to_source
       done_files = ssh.exec!(get_done_files(export))
-      Kernel.p done_files
       unless done_files.blank?
         done_files.split("\n").each do |filename|
           sftp = ssh.sftp.connect
-
           json_file = remote_path(export, filename) 
           json_local_path = File.join(tmp_dir,filename)
           puts "Downloading #{json_file}"
           sftp.download!(json_file, json_local_path)
           dump_file = get_dump_path(json_local_path)
           puts "Downloading #{dump_file}"
-          sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
-          
+          sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))        
         end
       end
     end
 
-    def metadata json_path
-      
-    end
- 
     def get_dump_path json_path
       metadata = ExportMetadata.new(:metadata_path => json_path)
       return metadata.export_path

@@ -14,7 +14,6 @@ module Myreplicator
                   :ssh,
                   :export_type,
                   :on_duplicate,
-                  :export_path,
                   :filepath,
                   :zipped,
                   :error)
@@ -137,9 +136,17 @@ module Myreplicator
         :incremental_val => @incremental_val,
         :export_id => @export_id,
         :filepath => @filepath,
-        :export_path => @export_path
+        :zipped => @zipped
       }
       return obj.to_json
+    end
+
+    ##
+    # Final path of the dump file after zip
+    ##
+    def export_path
+      path = @zipped ? @filepath + ".gz" : @filepath
+      return path
     end
 
     def store!
@@ -165,10 +172,9 @@ module Myreplicator
       @incremental_val = options[:incremental_val] if options[:incremental_val]
       @export_id = options[:export_id] if options[:export_id]
       @filepath = options[:filepath].nil? ? nil : options[:filepath]
-      @export_path = @filepath
       @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
       @export_type = options[f:export_type] if options[:export_type]
-      @zipped = false
+      @zipped = options[:zipped].nil? ? false : options[:zipped]
       @ssh = nil
 
       @success_callbacks = []
