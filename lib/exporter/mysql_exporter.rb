@@ -130,6 +130,7 @@ module Myreplicator
       puts "Zipping..."
       zip_result = metadata.ssh.exec!(zipfile)
       puts zip_result
+      metadata.export_path = metadata.filepath + ".gz" 
       update_export(:state => "export_completed", :export_finished_at => Time.now)
       puts "Done.."
     end

@@ -14,6 +14,7 @@ module Myreplicator
                   :ssh,
                   :export_type,
                   :on_duplicate,
+                  :export_path,
                   :filepath,
                   :zipped,
                   :error)
@@ -135,7 +136,8 @@ module Myreplicator
         :incremental_col => @incremental_col,
         :incremental_val => @incremental_val,
         :export_id => @export_id,
-        :filepath => @filepath
+        :filepath => @filepath,
+        :export_path => @export_path
       }
       return obj.to_json
     end
@@ -148,14 +150,13 @@ module Myreplicator
     end
 
     def load metadata_path
-      json = File.open(options[:metadata_path], "rb").read
+      json = File.open(metadata_path, "rb").read
       hash = JSON.parse(json)
-      Kernel.p hash
-      Kernel.p json
       set_attributes hash
     end
 
     def set_attributes options
+      options.symbolize_keys!
       @export_time = options[:export_time] if options[:export_time]
       @table = options[:table] if options[:table]
       @database = options[:database] if options[:database]
@@ -163,7 +164,8 @@ module Myreplicator
       @incremental_col = options[:incremental_col] if options[:incremental_col]
       @incremental_val = options[:incremental_val] if options[:incremental_val]
       @export_id = options[:export_id] if options[:export_id]
-      @filepath = options[:filepath] if options[:filepath]
+      @filepath = options[:filepath].nil? ? nil : options[:filepath]
+      @export_path = @filepath
       @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
       @export_type = options[f:export_type] if options[:export_type]
       @zipped = false
