@@ -22,20 +22,39 @@ module Myreplicator
     end
 
     def download export
-      ssh = export.ssh_to_source
-      done_files = ssh.exec!(get_done_files(export))
-      unless done_files.blank?
-        done_files.split("\n").each do |filename|
-          sftp = ssh.sftp.connect
-          json_file = remote_path(export, filename) 
-          json_local_path = File.join(tmp_dir,filename)
-          puts "Downloading #{json_file}"
-          sftp.download!(json_file, json_local_path)
-          dump_file = get_dump_path(json_local_path)
-          puts "Downloading #{dump_file}"
-          sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))        
-        end
+      ssh = export.ssh_to_source     
+      parallel_download(completed_files(ssh, export), ssh)
+    end
+    
+    def parallel_download files, ssh
+      for i in 0..files.size do
+        files[i]
       end
+      files.each do |filename|
+        download_file filename, ssh
+      end
+    end
+
+    def download_file filename, ssh
+      Proc.new { sftp = ssh.sftp.connect
+        json_file = remote_path(export, filename) 
+        json_local_path = File.join(tmp_dir,filename)
+        puts "Downloading #{json_file}"
+        sftp.download!(json_file, json_local_path)
+        dump_file = get_dump_path(json_local_path)
+        puts "Downloading #{dump_file}"
+        sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))             
+      }
+    end
+
+    def completed_files ssh, export
+      done_files = ssh.exec!(get_done_files(export))
+
+      unless done_files.blank?
+        return done_files.split("\n")
+      end
+
+      return []
     end
 
     def get_dump_path json_path
