@@ -23,20 +23,33 @@ module Myreplicator
 
     def download export
       ssh = export.ssh_to_source     
-      parallel_download(completed_files(ssh, export), ssh)
+      return parallel_download(export, ssh, completed_files(ssh, export))
     end
     
-    def parallel_download files, ssh
-      for i in 0..files.size do
-        files[i]
-      end
+    def parallel_download export, ssh, files
+      puts "IN PARL"
+      
+      # for i in 0..files.size do
+      #   files[i]
+      # end
+
+      p = Parallelizer.new(:block => download_file, :params => [ssh, export, filename], :max_threads => 5)
+      
       files.each do |filename|
-        download_file filename, ssh
+        puts filename
+        p.queue << {:params =>[ssh, export, filename], :block => download_file}
+        # instance_exec(ssh, export, filename, &download_file)       
       end
+
+      return p.queue
     end
 
-    def download_file filename, ssh
-      Proc.new { sftp = ssh.sftp.connect
+    def download_file    
+      proc = Proc.new { |params|
+        ssh = params[0]
+        export = params[1] 
+        filename = params[2]
+        sftp = ssh.sftp.connect
         json_file = remote_path(export, filename) 
         json_local_path = File.join(tmp_dir,filename)
         puts "Downloading #{json_file}"
