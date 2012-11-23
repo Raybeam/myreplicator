@@ -3,25 +3,48 @@ require "thread"
 module Myreplicator
   class Parallelizer
 
-    attr_accessor :block, :params, :queue
+    attr_accessor :queue
 
     def initialize *args
       options = args.extract_options!
       @queue = Queue.new
-      @proc = options[:block]
-      @params = options[:params]
-      @max_threads = options[:max_threads]
-      @threads = Queue.new
+      @threads = []
+      @max_threads = options[:max_threads].nil? ? 10 : options[:max_threads]
     end
-    
+
     def run
-      for i in 0..@queue.size do
-        @threads << Thread.new{Transporter.new.instance_exec(@params,&@proc)}
+      while @queue.size > 0
+        if @threads.size <= @max_threads
+          @threads << Thread.new(@queue.pop) do |proc|
+            Thread.current[:status] = 'running'
+            Transporter.new.instance_exec(proc[:params], &proc[:block])
+            Thread.current[:status] = 'done'
+          end
+        end
+      end 
+      
+      # done = false
+      Thread.new do 
+        counter =0
+        while(counter < 5)
+          puts @threads.size
+          @threads.each do |t|
+            puts t[:status]
+          end
+          counter += 1
+          sleep 2
+        end
       end
+
+      Kernel.p @threads
     end
 
     def check_threads
-      
+      Thread.new do 
+        @threads.each do |t|
+          
+        end
+      end
     end
 
   end
