@@ -23,7 +23,7 @@ module Myreplicator
 
     def download export
       ssh = export.ssh_to_source     
-      return parallel_download(export, ssh, completed_files(ssh, export))
+      parallel_download(export, ssh, completed_files(ssh, export))
     end
     
     def parallel_download export, ssh, files    
@@ -75,7 +75,6 @@ module Myreplicator
     def get_done_files export
       cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -l export_completed *.json"
     end
-
     
   end
 end
