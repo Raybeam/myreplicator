@@ -90,7 +90,10 @@ module Myreplicator
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
       
+      metadata.export_type = "initial"
+
       update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
+
       puts "Exporting..."
       result = execute_export(cmd, metadata)
       check_result(result, 0)
@@ -116,6 +119,7 @@ module Myreplicator
                                      :filepath => filepath,
                                      :sql => sql)
       
+      metadata.export_type = "incremental"
       update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
       puts "Exporting..."
       result = execute_export(cmd, metadata)
@@ -129,9 +133,7 @@ module Myreplicator
     ##
     def wrapup metadata
       puts "Zipping..."
-      zip_result = metadata.ssh.exec!(zipfile)
-      puts zip_result
-      metadata.zipped = true
+      zipfile(metadata)
       update_export(:state => "export_completed", :export_finished_at => Time.now)
       puts "Done.."
     end
@@ -163,10 +165,18 @@ module Myreplicator
     ##
     # zips the file on the source DB server
     ##
-    def zipfile
+    def zipfile metadata
       cmd = "cd #{Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"]}; gzip #{@export_obj.filename}"
-      puts cmd
-      return cmd
+      
+      zip_result = metadata.ssh.exec!(cmd)
+
+      unless zip_result.nil?        
+        raise Exceptions::ExportError.new("Export Error\n#{zip_result}") if zip_result.length > 0
+      end
+
+      metadata.zipped = true
+
+      return zip_result
     end
     
   end

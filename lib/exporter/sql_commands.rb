@@ -26,11 +26,11 @@ module Myreplicator
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
       cmd += "--result-file=#{options[:filepath]} "
+
       # cmd += "--tab=#{options[:filepath]} "
       # cmd += "--fields-enclosed-by=\'\"\' "
       # cmd += "--fields-escaped-by=\'\\\\\' "
 
-      puts cmd
       return cmd
     end
 
@@ -119,6 +119,29 @@ module Myreplicator
     end
 
     def self.mysql_export_outfile
+      
+    end
+
+    def self.load_data_infile *args
+      options = args.extract_options!
+      sql = ""
+    end
+
+    def self.initial_load *args
+      options = args.extract_options!
+      db = options[:db]
+      cmd = ""
+
+      # Destination database host
+      db_host = db_configs(db).has_key?("host") ? db_configs(db)["host"] : "127.0.0.1"
+      
+      cmd = Myreplicator.mysql
+      cmd += "-u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
+      cmd += "-h#{db_host} " 
+      cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
+      cmd += " #{db} "
+      cmd += " #{options[:table_name]} "
+
       
     end
 

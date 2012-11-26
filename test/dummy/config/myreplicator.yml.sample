@@ -1,6 +1,7 @@
 myreplicator:
-  tmp_path: tmp/myreplicator
+  tmp_path: 
   mysqldump: mysqldump
+  mysqlimport: mysqlimport
   mysql: mysql
   outfile_location: /tmp/myreplicator
   escape_by: '"'

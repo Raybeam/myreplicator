@@ -32,6 +32,12 @@ module Myreplicator
       end
     end
     
+    def filename
+      name = filepath.split("/").last
+      name = zipped ? "#{name}.gz" : name
+      return name     
+    end
+
     ##
     # Keeps track of the state of the export
     # Store itself in a JSON file on exit
@@ -136,7 +142,8 @@ module Myreplicator
         :incremental_val => @incremental_val,
         :export_id => @export_id,
         :filepath => @filepath,
-        :zipped => @zipped
+        :zipped => @zipped,
+        :export_type => @export_type
       }
       return obj.to_json
     end
@@ -173,7 +180,7 @@ module Myreplicator
       @export_id = options[:export_id] if options[:export_id]
       @filepath = options[:filepath].nil? ? nil : options[:filepath]
       @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
-      @export_type = options[f:export_type] if options[:export_type]
+      @export_type = options[:export_type] if options[:export_type]
       @zipped = options[:zipped].nil? ? false : options[:zipped]
       @ssh = nil
 
