@@ -9,7 +9,7 @@ module Myreplicator
       options = args.extract_options!
       @queue = Queue.new
       @threads = []
-      @max_threads = options[:max_threads].nil? ? 10 : options[:max_threads]
+      @max_threads = options[:max_threads].nil? ? 10 : options[:max_threads]     
     end
 
     ##
@@ -18,6 +18,8 @@ module Myreplicator
     # Exits when all jobs are allocated in threads
     ##
     def run
+      @done = false
+
       while @queue.size > 0
         if @threads.size <= @max_threads
           @threads << Thread.new(@queue.pop) do |proc|
@@ -29,8 +31,15 @@ module Myreplicator
           sleep 1
         end
       end 
-
+      
       manage_threads
+
+      # Waits until all threads are completed
+      # Before exiting
+      while !@done
+        sleep 1
+      end
+
     end
     
     ##
@@ -45,8 +54,17 @@ module Myreplicator
           @threads.each do |t|
             done << t if t[:status] == "done"
           end
+
           done.each{|d| @threads.delete(d)} # Clear dead threads
-          sleep 2 # Wait for more threads to spawn
+          
+          # If no more jobs are left, mark done
+
+          if @queue.size == 0 && @threads.size == 0
+            @done = true
+          else
+            sleep 2 # Wait for more threads to spawn
+          end
+
         end
       end
     end
