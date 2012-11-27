@@ -4,7 +4,6 @@ module Myreplicator
       
       def load_data_infile *args
         options = args.extract_options!
-        options.reverse_merge! :replace => false
 
         sql = build_load_data_infile options
 
@@ -18,6 +17,9 @@ module Myreplicator
       end
       
       def build_load_data_infile options
+        options.reverse_merge!(:replace => false,
+                               :fields_terminated_by 
+
         handle = options[:replace] ? 'REPLACE' : 'IGNORE' 
         
         sql = "LOAD DATA LOCAL INFILE '#{options[:filename]}' #{handle} INTO TABLE #{options[:table_name]} "

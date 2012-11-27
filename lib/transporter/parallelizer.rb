@@ -19,6 +19,7 @@ module Myreplicator
     ##
     def run
       @done = false
+      @manager_running = false
 
       while @queue.size > 0
         if @threads.size <= @max_threads
@@ -28,11 +29,10 @@ module Myreplicator
             Thread.current[:status] = 'done' 
           end
         else
+          manage_threads unless @manager_running
           sleep 1
         end
-      end 
-      
-      manage_threads
+      end   
 
       # Waits until all threads are completed
       # Before exiting
