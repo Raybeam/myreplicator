@@ -28,7 +28,7 @@ module Myreplicator
       exp = Export.find(metadata.export_id)
       
       cmd = SqlCommands.initial_load(:table_name => exp.table_name, 
-                                    :db => exp.destination_schema)
+                                     :db => exp.destination_schema)
       
       metadata.filename
     end
