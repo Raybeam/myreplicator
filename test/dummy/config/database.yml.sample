@@ -24,9 +24,9 @@ okl_test:
   password: okl
   host: 127.0.0.1
 
-destination_db:
+myreplicator:
   adapter: mysql2
-  database: raw_sources
+  database: myreplicator
   username: sas
   password: sasan
   host: 127.0.0.1
