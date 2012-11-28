@@ -15,9 +15,9 @@ module Myreplicator
       metadata_files.each do |metadata|
         puts metadata.export_type
         if metadata.export_type == "initial"
-          initial_load
+          initial_load metadata
         else
-          incremental_load
+          incremental_load metadata
         end
 
         metadata
@@ -26,14 +26,31 @@ module Myreplicator
 
     def initial_load metadata
       exp = Export.find(metadata.export_id)
+
+      unzip(metadata.filename)
+      # metadata.zipped = false
+      # metadata.store!
       
-      cmd = ImportSql.load_data_infile(:table_name => exp.table_name, 
-                                       :db => exp.destination_schema)
+      cmd = ImportSql.initial_load(:db => exp.destination_schema,
+                                   :filepath => File.join(tmp_dir,metadata.filename))
       
-      metadata.filename
+
+      puts metadata.filename
+      puts cmd
     end
-    
+
+    def unzip filename
+      cmd = "cd #{tmp_dir}; gunzip #{filename}"
+      puts cmd
+      return `#{cmd}`
+    end
+
     def incremental_load metadata
+      exp = Export.find(metadata.export_id)
+      cmd = ImportSql.load_data_infile(:table_name => exp.table_name, 
+                                       :db => exp.destination_schema,
+                                       :filename => metadata.filename
+                                       )
 
     end
 

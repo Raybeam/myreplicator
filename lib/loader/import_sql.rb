@@ -17,12 +17,16 @@ module Myreplicator
       end
       
       def build_load_data_infile options
-        options.reverse_merge!(:replace => false,
-                               :fields_terminated_by 
+        options.reverse_merge!(:replace => true,
+                               :fields_terminated_by => "\t",
+                               :lines_terminated_by => "\n"
+                               )
+                               
 
         handle = options[:replace] ? 'REPLACE' : 'IGNORE' 
         
-        sql = "LOAD DATA LOCAL INFILE '#{options[:filename]}' #{handle} INTO TABLE #{options[:table_name]} "
+        sql =  "LOAD DATA LOCAL INFILE '#{options[:filename]}' #{handle} "
+        sql += "INTO TABLE #{options[:db]}.#{options[:table_name]} "
         
         if options.include?(:character_set)
           sql << " CHARACTER SET #{options[:character_set]}"
@@ -64,26 +68,27 @@ module Myreplicator
 
       def initial_load *args
         options = args.extract_options!
-        db = options[:db]
-        cmd = mysql_cmd
+        cmd = mysql_cmd(options[:db])
         puts cmd
         
-        cmd += " #{db} "
-        cmd += " #{options[:table_name]} "
+        cmd += " #{options[:db]} "
         cmd += " < #{options[:filepath]} "
         
         puts cmd
         return cmd
       end
       
-      def mysql_cmd
+      def mysql_cmd db
         # Destination database host
-        db_host = db_configs(db).has_key?("host") ? db_configs(db)["host"] : "127.0.0.1"
+        puts db
+        Kernel.p SqlCommands.db_configs(db)
+        puts SqlCommands.db_configs(db).has_key?("host")
+        db_host = SqlCommands.db_configs(db).has_key?("host") ? SqlCommands.db_configs(db)["host"] : "127.0.0.1"
         
         cmd = Myreplicator.mysql
-        cmd += "-u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
+        cmd += "-u#{SqlCommands.db_configs(db)["username"]} -p#{SqlCommands.db_configs(db)["password"]} "
         cmd += "-h#{db_host} " 
-        cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
+        cmd += " -P#{SqlCommands.db_configs(db)["port"]} " if SqlCommands.db_configs(db)["port"]
         
         return cmd
       end

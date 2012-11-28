@@ -29,10 +29,15 @@ module Myreplicator
             Thread.current[:status] = 'done' 
           end
         else
-          manage_threads unless @manager_running
+          unless @manager_running
+            manage_threads 
+            @manager_running = true
+          end
           sleep 1
         end
       end   
+
+      manage_threads unless @manager_running
 
       # Waits until all threads are completed
       # Before exiting
