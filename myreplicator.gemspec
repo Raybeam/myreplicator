@@ -9,14 +9,14 @@ Gem::Specification.new do |s|
   s.version     = Myreplicator::VERSION
   s.authors     = ["Sasan Padidar"]
   s.email       = ["sasan@raybeam.com"]
-  s.homepage    = "https://github.com/Raybeam/myreplicatorx"
+  s.homepage    = "https://github.com/Raybeam/myreplicator"
   s.summary     = "File based replication for Mysql."
   s.description = "Database replication, Mysql in particular, could cause a number of issues if the tables that are being replicated are locked. Myreplicator is designed to replace Mysql's replication with a file based system. Myreplicator allows you to sync tables based on different frequencies and avoid using Mysql's built-in replication service."
 
   s.files = Dir["{app,config,db,lib}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.rdoc"]
   s.test_files = Dir["test/**/*"]
 
-  s.add_dependency "rails", "~> 3.2.8"
+  s.add_dependency "rails", "~> 3.0.0"
   s.add_dependency "mysql2"
   s.add_dependency "json"
   s.add_dependency "net-ssh"	
