@@ -4,28 +4,25 @@ module Myreplicator
       
       def load_data_infile *args
         options = args.extract_options!
-
         sql = build_load_data_infile options
 
-        puts sql
-        cmd = mysql_cmd
-        cmd += "-e #{sql} "
-
-        puts cmd
+        cmd = mysql_cmd(options[:db])
+        cmd += " --local_infile=1 "
+        cmd += "-e \"#{sql}\" "
 
         return cmd
       end
       
       def build_load_data_infile options
         options.reverse_merge!(:replace => true,
-                               :fields_terminated_by => "\t",
-                               :lines_terminated_by => "\n"
+                               :fields_terminated_by => "\\t",
+                               :lines_terminated_by => "\\n"
                                )
                                
 
         handle = options[:replace] ? 'REPLACE' : 'IGNORE' 
         
-        sql =  "LOAD DATA LOCAL INFILE '#{options[:filename]}' #{handle} "
+        sql =  "LOAD DATA LOCAL INFILE '#{options[:filepath]}' #{handle} "
         sql += "INTO TABLE #{options[:db]}.#{options[:table_name]} "
         
         if options.include?(:character_set)
@@ -36,23 +33,23 @@ module Myreplicator
           sql << " FIELDS"
         end
         if options.include?(:fields_terminated_by)
-          sql << " TERMINATED BY #{quote(options[:fields_terminated_by])}"
+          sql << " TERMINATED BY '#{options[:fields_terminated_by]}'"
         end
         if options.include?(:enclosed_by)
-          sql << " ENCLOSED BY #{quote(options[:enclosed_by])}"
+          sql << " ENCLOSED BY '#{options[:enclosed_by]}'"
         end
         if options.include?(:escaped_by)
-          sql << " ESCAPED BY #{quote(options[:escaped_by])}"
+          sql << " ESCAPED BY '#{options[:escaped_by]}'"
         end
         
         if options.include?(:starting_by) or options.include?(:lines_terminated_by)
           sql << " LINES"
         end
         if options.include?(:starting_by) 
-          sql << " STARTING BY #{quote(options[:starting_by])}"
+          sql << " STARTING BY '#{options[:starting_by]}'"
         end
         if options.include?(:lines_terminated_by)
-          sql << " TERMINATED BY #{quote(options[:lines_terminated_by])}"
+          sql << " TERMINATED BY '#{options[:lines_terminated_by]}'"
         end
 
         if options.include?(:ignore)

@@ -16,7 +16,8 @@ module Myreplicator
       ExportMetadata.record(:table => @export_obj.table_name,
                             :database => @export_obj.source_schema,
                             :export_id => @export_obj.id,
-                            :filepath => filepath) do |metadata|
+                            :filepath => filepath,
+                            :incremental_col => @export_obj.incremental_column) do |metadata|
 
         metadata.on_failure do |m|
           update_export(:state => "failed", :export_finished_at => Time.now, :error => metadata.error)
@@ -31,13 +32,16 @@ module Myreplicator
             wrapup metadata
           end
         elsif !is_running?
+          # local max value for incremental export
           max_value = incremental_export(metadata)
+
+          metadata.incremental_val = max_value # store max val in metadata
 
           # Call back that updates the maximum value of incremental col
           metadata.on_success do |m|
             metadata.state = "export_completed"
             wrapup metadata
-            @export_obj.update_max_val(max_value)
+            @export_obj.update_max_val(max_value) #  update max value if export was successful
           end
         end
         
