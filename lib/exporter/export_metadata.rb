@@ -38,6 +38,10 @@ module Myreplicator
       return name     
     end
 
+    def destination_filepath tmp_dir
+      File.join(tmp_dir, filename)
+    end
+
     ##
     # Keeps track of the state of the export
     # Store itself in a JSON file on exit

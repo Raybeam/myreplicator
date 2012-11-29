@@ -23,9 +23,17 @@ module Myreplicator
         end
       end
       
-      initials.each{|metadata| puts metadata.table; initial_load metadata}
+      initials.each do |metadata| 
+        puts metadata.table
+        initial_load metadata
+        cleanup metadata
+      end
 
-      incrementals.each{|metadata| puts metadata.table; incremental_load metadata}
+      incrementals.each do |metadata|
+        puts metadata.table
+        incremental_load metadata
+        cleanup metadata
+      end
     end
 
     ##
@@ -37,7 +45,7 @@ module Myreplicator
       metadata.zipped = false
 
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
-                                   :filepath => File.join(tmp_dir,metadata.filename))      
+                                   :filepath => metadata.destination_filepath(tmp_dir))      
       puts cmd
       result = `#{cmd}` # execute
       unless result.nil?
@@ -58,7 +66,7 @@ module Myreplicator
 
       cmd = ImportSql.load_data_infile(:table_name => exp.table_name, 
                                        :db => exp.destination_schema,
-                                       :filepath => File.join(tmp_dir,metadata.filename))
+                                       :filepath => metadata.destination_filepath(tmp_dir))
       puts cmd
       result = `#{cmd}` # execute
       unless result.nil?
@@ -72,7 +80,9 @@ module Myreplicator
     # Deletes the metadata file and extract
     ##
     def cleanup metadata
-
+      puts "Cleaning up..."
+      FileUtils.rm "#{metadata.destination_filepath(tmp_dir)}.json" # json file
+      FileUtils.rm metadata.destination_filepath(tmp_dir) # dump file
     end
 
     ##
