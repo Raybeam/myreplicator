@@ -68,26 +68,21 @@ module Myreplicator
 
       def initial_load *args
         options = args.extract_options!
-        cmd = mysql_cmd(options[:db])
-        puts cmd
-        
+
+        cmd = mysql_cmd(options[:db])       
         cmd += " #{options[:db]} "
         cmd += " < #{options[:filepath]} "
         
-        puts cmd
         return cmd
       end
       
       def mysql_cmd db
         # Destination database host
-        puts db
-        Kernel.p SqlCommands.db_configs(db)
-        puts SqlCommands.db_configs(db).has_key?("host")
         db_host = SqlCommands.db_configs(db).has_key?("host") ? SqlCommands.db_configs(db)["host"] : "127.0.0.1"
         
         cmd = Myreplicator.mysql
-        cmd += "-u#{SqlCommands.db_configs(db)["username"]} -p#{SqlCommands.db_configs(db)["password"]} "
-        cmd += "-h#{db_host} " 
+        cmd += " -u#{SqlCommands.db_configs(db)["username"]} -p#{SqlCommands.db_configs(db)["password"]} "
+        cmd += " -h#{db_host} " 
         cmd += " -P#{SqlCommands.db_configs(db)["port"]} " if SqlCommands.db_configs(db)["port"]
         
         return cmd

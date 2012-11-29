@@ -12,37 +12,62 @@ module Myreplicator
     end
 
     def load
-      metadata_files.each do |metadata|
-        puts metadata.export_type
-        if metadata.export_type == "initial"
-          initial_load metadata
-        else
-          incremental_load metadata
-        end
+      initials = []
+      incrementals = []
 
-        metadata
+      metadata_files.each do |metadata|
+        if metadata.export_type == "initial"
+          initials << metadata
+        else
+          incrementals << metadata
+        end
       end
+      
+      initials.each{|metadata| puts metadata.table; initial_load metadata}
+
+      incrementals.each{|metadata| puts metadata.table; incremental_load metadata}
+
     end
 
     def initial_load metadata
       exp = Export.find(metadata.export_id)
 
-      unzip(metadata.filename)
-      # metadata.zipped = false
-      # metadata.store!
-      
+      zip_result = unzip(metadata.filename)
+      raise Exceptions::LoaderError.new("Unzipping #{metadata.filename} Failed!") unless zip_result
+      metadata.zipped = false
+
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
-                                   :filepath => File.join(tmp_dir,metadata.filename))
-      
-
-      puts metadata.filename
+                                   :filepath => File.join(tmp_dir,metadata.filename))      
       puts cmd
+      result = `#{cmd}` # execute
+      puts result
+      
     end
-
+    
+    ##
+    # Unzips file
+    # Checks if the file exists or already unzipped
+    ##
     def unzip filename
       cmd = "cd #{tmp_dir}; gunzip #{filename}"
-      puts cmd
-      return `#{cmd}`
+
+      if File.exist?(File.join(tmp_dir,filename))
+        result = `#{cmd}`
+        unless result.nil? 
+          puts result
+          if result.length > 0
+            return false 
+          end
+          return true
+        else
+          return true
+        end
+      elsif File.exist?(File.join(tmp_dir,filename.gsub(".gz","")))
+        puts "File already unzipped"
+        return true
+      end
+
+      return false
     end
 
     def incremental_load metadata
