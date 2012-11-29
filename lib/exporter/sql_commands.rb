@@ -49,7 +49,7 @@ module Myreplicator
         "no-create-db" => true,
         "no-data" => false,
         "quick" => true,
-        "skip-add-drop-table" => true,
+        "skip-add-drop-table" => false,
         "create-options" => false,
         "single-transaction" => false
       }

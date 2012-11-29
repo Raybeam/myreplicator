@@ -7,7 +7,7 @@ module Myreplicator
         sql = build_load_data_infile options
 
         cmd = mysql_cmd(options[:db])
-        cmd += " --local_infile=1 "
+        cmd += " --local_infile=1 " # Used for mysql versions that do not support -e and LDI
         cmd += "-e \"#{sql}\" "
 
         return cmd

@@ -26,7 +26,6 @@ module Myreplicator
       initials.each{|metadata| puts metadata.table; initial_load metadata}
 
       incrementals.each{|metadata| puts metadata.table; incremental_load metadata}
-
     end
 
     ##
@@ -39,6 +38,7 @@ module Myreplicator
 
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
                                    :filepath => File.join(tmp_dir,metadata.filename))      
+      puts cmd
       result = `#{cmd}` # execute
       unless result.nil?
         if result.size > 0
@@ -67,7 +67,14 @@ module Myreplicator
         end
       end
     end
-    
+
+    ##
+    # Deletes the metadata file and extract
+    ##
+    def cleanup metadata
+
+    end
+
     ##
     # Unzips file
     # Checks if the file exists or already unzipped
