@@ -2,7 +2,7 @@ module Myreplicator
   class Engine < ::Rails::Engine
     # isolate_namespace Myreplicator
     
-    if ::Rails::Engine.method(:isolate_namespace)
+    if Rails::Engine.method_defined?(:isolate_namespace)
       isolate_namespace Myreplicator
     else
       puts "Defined"
