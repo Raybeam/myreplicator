@@ -42,7 +42,7 @@ module Myreplicator
       
   #   # end
 
-  #   isolate_namespace Myreplicator
+    isolate_namespace Myreplicator
     
   end
 end

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    myreplicator (0.0.11)
+    myreplicator (0.0.12)
       json
       mysql2
       net-sftp
@@ -125,7 +125,7 @@ GEM
     treetop (1.4.12)
       polyglot
       polyglot (>= 0.3.1)
-    tzinfo (0.3.34)
+    tzinfo (0.3.35)
     will_paginate (3.0.3)
 
 PLATFORMS
