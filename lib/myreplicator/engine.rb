@@ -1,8 +1,9 @@
 module Myreplicator
   class Engine < ::Rails::Engine
     # isolate_namespace Myreplicator
-
-    define_method(:isolate_namespace) do |mod|
+    metaclass = class << self; self; end
+    class << self
+        define_method(:isolate_namespace) do |mod|
       puts "NOT Defined"
       engine_name(ActiveSupport::Inflector.underscore(mod).gsub("/", "_"))
       
@@ -33,7 +34,7 @@ module Myreplicator
         end
       end
     end unless method_defined? :isolate_namespace
-    
+  end    
     # if Rails::Engine.method_defined?(:isolate_namespace)
     #   puts "Defined"
     #   isolate_namespace Myreplicator
