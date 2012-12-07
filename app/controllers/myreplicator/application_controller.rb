@@ -5,7 +5,6 @@ module Myreplicator
     private 
 
     def authenticated?
-      puts "IN MYREP AUTH"
       if Myreplicator.auth_required
         redirect_to Myreplicator.login_redirect unless Myreplicator.authenticated
       end
