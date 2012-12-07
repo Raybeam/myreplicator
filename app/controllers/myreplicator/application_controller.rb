@@ -1,8 +1,11 @@
 module Myreplicator
   class ApplicationController < ActionController::Base
-    before_filter :authorized?
+    before_filter :authenticated?
+    
+    private 
 
-    def authorized?
+    def authenticated?
+      puts "IN MYREP AUTH"
       if Myreplicator.auth_required
         redirect_to Myreplicator.login_redirect unless Myreplicator.authenticated
       end
