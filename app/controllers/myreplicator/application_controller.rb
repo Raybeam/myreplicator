@@ -5,8 +5,11 @@ module Myreplicator
     private 
 
     def authenticated?
+      Kernel.p Myreplicator.auth_required
       if Myreplicator.auth_required
-        redirect_to Myreplicator.login_redirect unless Myreplicator.authenticated
+        puts request.fullpath
+        url = "#{Myreplicator.login_redirect}?redirect_url=#{request.fullpath}"
+        redirect_to url unless Myreplicator.authenticated
       end
     end
     
