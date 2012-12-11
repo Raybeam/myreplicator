@@ -99,6 +99,26 @@ module Myreplicator
     end
 
     ##
+    # Returns a hash of {DB_NAME => [TableName1,...], DB => ...}
+    ##
+    def self.available_tables
+      metadata = {}
+      available_dbs.each do |db|
+        tables = SourceDb.get_tables(db)
+        metadata[db] = tables
+      end
+      return metadata
+    end
+
+    def self.available_dbs
+      dbs = ActiveRecord::Base.configurations.keys
+      dbs.delete("development")
+      dbs.delete("production")
+      dbs.delete("test")
+      return dbs
+    end
+
+    ##
     # Inner Class that connects to the source database 
     # Handles connecting to multiple databases
     ##
@@ -106,9 +126,24 @@ module Myreplicator
     class SourceDb < ActiveRecord::Base
       
       def self.connect db
-        @@connected ||= true
         establish_connection(ActiveRecord::Base.configurations[db])
-        Kernel.p ActiveRecord::Base.connected?
+      end
+
+      ##
+      # Returns tables as an Array
+      # releases the connection
+      ##
+      def self.get_tables(db)
+        tables = []
+        begin
+          self.connect(db)
+          tables = self.connection.tables  
+          self.connection_pool.release_connection
+        rescue Mysql2::Error => e
+          puts "Connection to #{db} Failed!"
+          puts e.message
+        end          
+        return tables
       end
       
       def self.exec_sql source_db,sql

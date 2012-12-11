@@ -31,7 +31,8 @@ module Myreplicator
     # GET /exports/new.json
     def new
       @export = Export.new
-  
+      @dbs = get_dbs
+
       respond_to do |format|
         format.html # new.html.erb
         format.json { render json: @export }
@@ -41,6 +42,8 @@ module Myreplicator
     # GET /exports/1/edit
     def edit
       @export = Export.find(params[:id])
+      @dbs = get_dbs
+
       @edit = true
     end
   
@@ -48,6 +51,7 @@ module Myreplicator
     # POST /exports.json
     def create
       @export = Export.new(params[:export])
+      @dbs = get_dbs
   
       respond_to do |format|
         if @export.save
@@ -64,6 +68,7 @@ module Myreplicator
     # PUT /exports/1.json
     def update
       @export = Export.find(params[:id])
+      @dbs = get_dbs
   
       respond_to do |format|
         if @export.update_attributes(params[:export])
@@ -101,6 +106,17 @@ module Myreplicator
     def sort_direction
       %w[asc desc].include?(params[:direction]) ? params[:direction] : "asc"
     end
+    
+    def db_metadata
+      @db_metadata ||= Myreplicator::Export.available_tables
+    end
 
+    def get_dbs
+      return db_metadata.keys
+    end
+
+    def get_tables(db)
+      return db_metadata[db]
+    end
   end
 end

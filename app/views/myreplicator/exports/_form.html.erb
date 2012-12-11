@@ -18,11 +18,11 @@ export_type = ["incremental","fulldump"]
   <% end %>
   <div class="form-section">
 <label>Source Schema</label>
-<%= f.text_field :source_schema %>
+<%= f.select :source_schema, @dbs %>
 <label>Destination Schema</label>
-<%= f.text_field :destination_schema %>
+<%= f.select :destination_schema, @dbs %>
 <label>Table Name</label>
-<%= f.text_field :table_name %>
+<%= f.select :table_name, [] %>
 <label>Incremental Column</label>
 <%= f.text_field :incremental_column %>
 <label>Maximum Incremental Value</label>
