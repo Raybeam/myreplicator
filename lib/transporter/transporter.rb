@@ -12,7 +12,12 @@ module Myreplicator
       Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
       @tmp_dir
     end
-
+    
+    ##
+    # Connects to all unique database servers 
+    # downloads export files concurrently from multiple sources
+    # TO DO: Clean up after transfer job is done
+    ##
     def transfer
       unique_jobs = Export.where("state != 'failed' and active = 1").group("source_schema")
       
@@ -21,11 +26,19 @@ module Myreplicator
       end
     end
 
+    ##
+    # Connect to server via SSH
+    # Kicks of parallel download
+    ##
     def download export
       ssh = export.ssh_to_source     
       parallel_download(export, ssh, completed_files(ssh, export))
     end
-    
+
+    ##
+    # Gathers all files that need to be downloaded
+    # Gives the queue to parallelizer library to download in parallel
+    ##
     def parallel_download export, ssh, files    
       p = Parallelizer.new
       
@@ -37,6 +50,14 @@ module Myreplicator
       p.run 
     end
 
+    ##
+    # Code block that each thread calls
+    # instance_exec is used to execute under Transporter class
+    # 1. Connects via SFTP
+    # 2. Downloads metadata file first
+    # 3. Gets dump file location from metadata
+    # 4. Downloads dump file
+    ##
     def download_file    
       proc = Proc.new { |params|
         ssh = params[0]
@@ -52,7 +73,10 @@ module Myreplicator
         sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))             
       }
     end
-
+    
+    ##
+    # Gets all files ready to be exported from server
+    ##
     def completed_files ssh, export
       done_files = ssh.exec!(get_done_files(export))
 
@@ -63,15 +87,24 @@ module Myreplicator
       return []
     end
 
+    ##
+    # Reads metadata file for the export path
+    ##
     def get_dump_path json_path
       metadata = ExportMetadata.new(:metadata_path => json_path)
       return metadata.export_path
     end
 
+    ##
+    # Returns where path of dump files on remote server 
+    ## 
     def remote_path export, filename
       File.join(Myreplicator.configs[export.source_schema]["ssh_tmp_dir"], filename)
     end
 
+    ##
+    # Command for list of done files
+    ## 
     def get_done_files export
       cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -l export_completed *.json"
     end
