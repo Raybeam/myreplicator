@@ -1,12 +1,12 @@
 PATH
   remote: .
   specs:
-    myreplicator (0.0.9)
+    myreplicator (0.0.16)
       json
       mysql2
       net-sftp
       net-ssh
-      rails (>= 3.0.4)
+      rails (>= 3.2.0)
       will_paginate (~> 3.0)
 
 GEM
@@ -125,7 +125,7 @@ GEM
     treetop (1.4.12)
       polyglot
       polyglot (>= 0.3.1)
-    tzinfo (0.3.34)
+    tzinfo (0.3.35)
     will_paginate (3.0.3)
 
 PLATFORMS
