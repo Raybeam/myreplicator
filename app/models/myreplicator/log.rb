@@ -35,9 +35,8 @@ module Myreplicator
           log.save!
 
           yield log
-          the export process works 
-          log.state = "completed"
 
+          log.state = "completed"
         rescue Exception => e
           log.state = "failed"
           log.error = e.message

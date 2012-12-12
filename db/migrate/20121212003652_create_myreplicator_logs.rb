@@ -4,7 +4,7 @@ class CreateMyreplicatorLogs < ActiveRecord::Migration
       t.integer :pid
       t.string :job_type
       t.string :name
-      t.string :filepath
+      t.string :file
       t.string :state
       t.string :thread_state
       t.string :hostname
