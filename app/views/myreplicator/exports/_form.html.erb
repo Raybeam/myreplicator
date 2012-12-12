@@ -3,7 +3,6 @@
 export_to = ["destination_db","s3","both"]
 export_type = ["incremental","fulldump"]
 %>
-
 <%= form_for(@export) do |f| %>
   <% if @export.errors.any? %>
     <div id="error_explanation">
@@ -93,12 +92,29 @@ export_type = ["incremental","fulldump"]
 <%= javascript_include_tag "myreplicator/chosen.jquery.min" %>
 <%= javascript_include_tag "myreplicator/cronwtf.min" %>
 <script>
+var dbs = {
+<% @tables.each do |key,values| %>
+  "<%= key %>":[
+    <% values.each do |table| %>
+      "<%= table %>",
+    <% end %>
+  ],
+<% end %>
+}
 $(function(){
   CronUI.translate();
   $(".chosen").chosen();
+  $("#export_destination_schema,#export_table_name").chosen();
   $(".cron").chosen().change(function(){CronUI.translate()});
+  $("#export_source_schema").chosen().change(function(){
+    exportSchemaSelect($(this).val())
+  });
+  exportSchemaSelect($("#export_source_schema").val());
+<%- if @edit -%>
+  editInit();
+<%- end -%>
+})
 
-  <%- if @edit -%>
 function editInit(){
   var cron = "<%= @export.cron %>";
   var displays = ["#min","#hour","#day","#month","#dow"]; 
@@ -108,10 +124,18 @@ function editInit(){
     $(displays[i]).val(cron_vals[i]).trigger("liszt:updated");
   }
   CronUI.translate();
+  $("#export_table_name").val("<%= @export.table_name %>").trigger("liszt:updated");
 }
-editInit();
-  <%- end -%>
 
-
-})
+function exportSchemaSelect(val){
+    var target = $("#export_table_name");
+    var tables = dbs[val];
+    var l = tables.length;
+    var options = "";
+    for(i=0;i<l;i++){
+      options += "<option value='"+tables[i]+"'>"+tables[i]+"</option>";
+    }
+    target.val('').find("option").remove().trigger("liszt:updated");
+    target.append(options).trigger("liszt:updated");
+}
 </script>
