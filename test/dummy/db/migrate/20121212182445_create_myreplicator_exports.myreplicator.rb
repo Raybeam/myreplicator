@@ -16,14 +16,8 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.text :error
       t.boolean :active, :default => true
       t.integer :exporter_pid
-      t.integer :transporter_pid
-      t.integer :loader_pid
       t.datetime :export_started_at, :default => nil
       t.datetime :export_finished_at, :default => nil
-      t.datetime :load_started_at, :default => nil
-      t.datetime :load_finished_at, :default => nil
-      t.datetime :transfer_started_at, :default => nil
-      t.datetime :transfer_finished_at, :default => nil
       t.timestamps
     end  
     add_index :myreplicator_exports, [:source_schema, :destination_schema, :table_name], :unique => true, :name => "unique_index"

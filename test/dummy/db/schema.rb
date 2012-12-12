@@ -11,7 +11,26 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121115194022) do
+ActiveRecord::Schema.define(:version => 20121212182446) do
+
+  create_table "batchy_batches", :force => true do |t|
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "expire_at"
+    t.string   "state"
+    t.text     "error"
+    t.string   "hostname"
+    t.integer  "pid"
+    t.string   "name"
+    t.string   "guid"
+    t.integer  "parent_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.text     "backtrace"
+  end
+
+  add_index "batchy_batches", ["guid"], :name => "index_batchy_batches_on_guid"
+  add_index "batchy_batches", ["state"], :name => "index_batchy_batches_on_state"
 
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
@@ -33,18 +52,29 @@ ActiveRecord::Schema.define(:version => 20121115194022) do
     t.text     "error"
     t.boolean  "active",                  :default => true
     t.integer  "exporter_pid"
-    t.integer  "transporter_pid"
-    t.integer  "loader_pid"
     t.datetime "export_started_at"
     t.datetime "export_finished_at"
-    t.datetime "load_started_at"
-    t.datetime "load_finished_at"
-    t.datetime "transfer_started_at"
-    t.datetime "transfer_finished_at"
     t.datetime "created_at",                                            :null => false
     t.datetime "updated_at",                                            :null => false
   end
 
   add_index "myreplicator_exports", ["source_schema", "destination_schema", "table_name"], :name => "unique_index", :unique => true
+
+  create_table "myreplicator_logs", :force => true do |t|
+    t.integer  "pid"
+    t.string   "job_type"
+    t.string   "name"
+    t.string   "filepath"
+    t.string   "state"
+    t.string   "hostname"
+    t.string   "export_id"
+    t.text     "error"
+    t.text     "backtrace"
+    t.string   "guid"
+    t.datetime "started_at"
+    t.datetime "finished_at"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+  end
 
 end
