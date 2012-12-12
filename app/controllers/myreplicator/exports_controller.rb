@@ -32,7 +32,7 @@ module Myreplicator
     def new
       @export = Export.new
       @dbs = get_dbs
-
+      @tables = db_metadata
       respond_to do |format|
         format.html # new.html.erb
         format.json { render json: @export }
@@ -43,7 +43,7 @@ module Myreplicator
     def edit
       @export = Export.find(params[:id])
       @dbs = get_dbs
-
+      @tables = db_metadata
       @edit = true
     end
   

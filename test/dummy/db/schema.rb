@@ -13,25 +13,6 @@
 
 ActiveRecord::Schema.define(:version => 20121212182446) do
 
-  create_table "batchy_batches", :force => true do |t|
-    t.datetime "started_at"
-    t.datetime "finished_at"
-    t.datetime "expire_at"
-    t.string   "state"
-    t.text     "error"
-    t.string   "hostname"
-    t.integer  "pid"
-    t.string   "name"
-    t.string   "guid"
-    t.integer  "parent_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.text     "backtrace"
-  end
-
-  add_index "batchy_batches", ["guid"], :name => "index_batchy_batches_on_guid"
-  add_index "batchy_batches", ["state"], :name => "index_batchy_batches_on_state"
-
   create_table "my_test", :force => true do |t|
     t.string   "desc",       :limit => 45
     t.datetime "updated_at"
