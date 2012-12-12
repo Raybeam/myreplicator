@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121212182446) do
+ActiveRecord::Schema.define(:version => 20121212184821) do
 
   create_table "batchy_batches", :force => true do |t|
     t.datetime "started_at"
@@ -66,6 +66,7 @@ ActiveRecord::Schema.define(:version => 20121212182446) do
     t.string   "name"
     t.string   "filepath"
     t.string   "state"
+    t.string   "thread_state"
     t.string   "hostname"
     t.string   "export_id"
     t.text     "error"
@@ -73,8 +74,8 @@ ActiveRecord::Schema.define(:version => 20121212182446) do
     t.string   "guid"
     t.datetime "started_at"
     t.datetime "finished_at"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
+    t.datetime "created_at",   :null => false
+    t.datetime "updated_at",   :null => false
   end
 
 end

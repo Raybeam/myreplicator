@@ -63,14 +63,19 @@ module Myreplicator
         ssh = params[0]
         export = params[1] 
         filename = params[2]
-        sftp = export.sftp_to_source
-        json_file = remote_path(export, filename) 
-        json_local_path = File.join(tmp_dir,filename)
-        puts "Downloading #{json_file}"
-        sftp.download!(json_file, json_local_path)
-        dump_file = get_dump_path(json_local_path)
-        puts "Downloading #{dump_file}"
-        sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))             
+        Log.run(:job_type => "transporter",
+                :filepath => filename, 
+                :started_at => Time.now, 
+                :export_id => export.id) do |log|
+          sftp = export.sftp_to_source
+          json_file = remote_path(export, filename) 
+          json_local_path = File.join(tmp_dir,filename)
+          puts "Downloading #{json_file}"
+          sftp.download!(json_file, json_local_path)
+          dump_file = get_dump_path(json_local_path)
+          puts "Downloading #{dump_file}"
+          sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))             
+        end
       }
     end
     

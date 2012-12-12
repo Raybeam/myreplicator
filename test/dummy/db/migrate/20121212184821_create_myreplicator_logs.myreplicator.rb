@@ -7,6 +7,7 @@ class CreateMyreplicatorLogs < ActiveRecord::Migration
       t.string :name
       t.string :filepath
       t.string :state
+      t.string :thread_state
       t.string :hostname
       t.string :export_id
       t.text :error
