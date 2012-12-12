@@ -1,7 +1,13 @@
 class CreateMyreplicatorImports < ActiveRecord::Migration
   def change
     create_table :myreplicator_imports do |t|
-
+      t.integer :loader_pid
+      t.string :state
+      t.string :hostname
+      t.string :filename
+      t.string :export_id
+      t.datetime :load_started_at, :default => nil
+      t.datetime :load_finished_at, :default => nil
       t.timestamps
     end
   end
