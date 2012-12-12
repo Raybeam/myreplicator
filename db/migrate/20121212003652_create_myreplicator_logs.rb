@@ -4,9 +4,9 @@ class CreateMyreplicatorLogs < ActiveRecord::Migration
       t.integer :pid
       t.string :job_type
       t.string :name
+      t.string :filepath
       t.string :state
       t.string :hostname
-      t.string :filename
       t.string :export_id
       t.text :error
       t.text :backtrace
