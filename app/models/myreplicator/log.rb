@@ -1,5 +1,5 @@
 module Myreplicator
-  class Transfer < ActiveRecord::Base
+  class Log < ActiveRecord::Base
     # attr_accessible :title, :body
   end
 end

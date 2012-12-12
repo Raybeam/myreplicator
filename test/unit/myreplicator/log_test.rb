@@ -1,7 +1,7 @@
 require 'test_helper'
 
 module Myreplicator
-  class ImportTest < ActiveSupport::TestCase
+  class LogTest < ActiveSupport::TestCase
     # test "the truth" do
     #   assert true
     # end
