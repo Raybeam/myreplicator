@@ -25,13 +25,27 @@ module Myreplicator
       
       initials.each do |metadata| 
         puts metadata.table
-        initial_load metadata
+
+        Log.run(:job_type => "loader", 
+                :name => "initial_import", 
+                :file => metadata.filename, 
+                :export_id => metadata.export_id) do |log|
+          
+          initial_load metadata
+        end
+
         cleanup metadata
       end
 
       incrementals.each do |metadata|
         puts metadata.table
-        incremental_load metadata
+        Log.run(:job_type => "loader", 
+                :name => "incremental_import", 
+                :file => metadata.filename, 
+                :export_id => metadata.export_id) do |log|
+
+          incremental_load metadata
+        end
         cleanup metadata
       end
     end
@@ -47,12 +61,14 @@ module Myreplicator
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
                                    :filepath => metadata.destination_filepath(tmp_dir))      
       puts cmd
+
       result = `#{cmd}` # execute
       unless result.nil?
         if result.size > 0
           raise Exceptions::LoaderError.new("Initial Load #{metadata.filename} Failed!\n#{result}") 
         end
       end
+      
     end
 
     ##
@@ -68,12 +84,15 @@ module Myreplicator
                                        :db => exp.destination_schema,
                                        :filepath => metadata.destination_filepath(tmp_dir))
       puts cmd
+      
       result = `#{cmd}` # execute
+      
       unless result.nil?
         if result.size > 0
           raise Exceptions::LoaderError.new("Incremental Load #{metadata.filename} Failed!\n#{result}") 
         end
       end
+
     end
 
     ##
