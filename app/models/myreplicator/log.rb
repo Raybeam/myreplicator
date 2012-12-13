@@ -3,7 +3,7 @@ module Myreplicator
     attr_accessible(:pid,
                     :job_type,
                     :name,
-                    :filepath,
+                    :file,
                     :state,
                     :thread_state,
                     :hostname,
@@ -17,6 +17,7 @@ module Myreplicator
     ##
     # Creates a log object
     # Stores the state and related information about the job
+    # File's names are supposed to be unique
     ##
     def self.run *args
       options = args.extract_options!
@@ -38,11 +39,13 @@ module Myreplicator
 
           log.state = "completed"
         rescue Exception => e
-          log.state = "failed"
+          log.state = "error"
           log.error = e.message
           log.backtrace =  e.backtrace
 
         ensure
+          log.finished_at = Time.now
+          log.thread_state = Thread.current.status
           log.save!
         end
       end
@@ -50,7 +53,21 @@ module Myreplicator
     end
 
     def running?
-      Log.where(:filepath => filepath, :job_type => job_type, :state => "running").count > 0
+      logs = Log.where(:file => file, :job_type => job_type, :state => "running")
+  
+      if logs.count > 0
+        logs.each do |log|
+          if File.exists? "/proc/#{log.pid.to_s}"
+            puts "still running #{filepath}"
+            return true
+          else
+            log.state = "error"
+            log.save!
+          end
+        end
+      end
+
+      return false
     end
 
   end
