@@ -52,6 +52,18 @@ module Myreplicator
 
     end
 
+    ##
+    # Kills the job if running
+    # Using PID
+    ##
+    def kill
+      begin
+        Process.kill('TERM', pid)
+      rescue Errno::ESRCH
+        puts "pid #{pid} does not exist!"
+      end
+    end
+
     def running?
       logs = Log.where(:file => file, :job_type => job_type, :state => "running")
   
