@@ -83,6 +83,22 @@ module Myreplicator
       return cmd
     end
 
+    def self.mysql_export_outfile *args
+      options = args.extract_options!
+      sql = "SELECT * INTO OUTFILE #{options[:filepath]} FROM #{options[:db]}.#{options[:table]}" 
+      
+      if options[:incremental_col] && options[:incremental_val]
+        if options[:incremental_col_type] == "datetime"
+          sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
+        else
+          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+        end
+      end
+
+      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\"'  LINES TERMINATED BY '\n'"
+
+    end
+
     def self.mysql_flags
       {"column-names" => false,
         "quick" => true,
@@ -116,10 +132,6 @@ module Myreplicator
       end
       
       return sql
-    end
-
-    def self.mysql_export_outfile
-      
     end
 
   end
