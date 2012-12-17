@@ -34,14 +34,25 @@ module Myreplicator
       return cmd
     end
 
+    ##
+    # Db configs for active record connection
+    ## 
+
     def self.db_configs db
       ActiveRecord::Base.configurations[db]
     end
+
+    ##
+    # Configs needed for SSH connection to source server
+    ##
 
     def self.ssh_configs db
       Myreplicator.configs[db]
     end
 
+    ##
+    # Default dump flags
+    ## 
     def self.dump_flags
       {"add-locks" => true,
         "compact" => false,
@@ -54,6 +65,10 @@ module Myreplicator
         "single-transaction" => false
       }
     end
+
+    ##
+    # Mysql exports using -e flag
+    ## 
 
     def self.mysql_export *args
       options = args.extract_options!
@@ -83,6 +98,35 @@ module Myreplicator
       return cmd
     end
 
+    ##
+    # Mysql export data into outfile option
+    # Provided for tables that need special delimiters
+    ##
+    
+    def self.get_outfile_sql options 
+      sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
+      
+      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
+      
+      sql += "FROM #{options[:db]}.#{options[:table]} "
+
+      if options[:incremental_col] && options[:incremental_val]
+        if options[:incremental_col_type] == "datetime"
+          sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
+        else
+          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+        end
+      end
+
+      return sql
+    end
+
+    ##
+    # Export using outfile
+    # ;~; delimited
+    # terminated by newline 
+    # Location of the output file needs to have 777 perms
+    ##
     def self.mysql_export_outfile *args
       options = args.extract_options!
       options.reverse_merge! :flags => []
@@ -100,32 +144,21 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
-
-      sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
-
-      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
-      
-      sql += "FROM #{options[:db]}.#{options[:table]} "
-
-      if options[:incremental_col] && options[:incremental_val]
-        if options[:incremental_col_type] == "datetime"
-          sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
-        else
-          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
-        end
-      end
      
       cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
       cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
       cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
-      cmd += "--execute=\"#{sql}\" "
+      cmd += "--execute=\"#{get_outfile_sql(options)}\" "
       
       puts cmd
 
       return cmd
     end
 
+    ##
+    # Default flags for mysql export
+    ## 
     def self.mysql_flags
       {"column-names" => false,
         "quick" => true,
@@ -133,6 +166,9 @@ module Myreplicator
       }    
     end
 
+    ##
+    # Builds SQL needed for incremental exports
+    ##
     def self.export_sql *args
       options = args.extract_options!
       sql = "SELECT * FROM #{options[:db]}.#{options[:table]} " 
@@ -148,6 +184,10 @@ module Myreplicator
       return sql
     end
 
+    ##
+    # Gets the Maximum value for the incremental 
+    # column of the export job
+    ##
     def self.max_value_sql *args
       options = args.extract_options!
       sql = ""
