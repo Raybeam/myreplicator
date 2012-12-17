@@ -87,7 +87,7 @@ module Myreplicator
       options = args.extract_options!
       options.reverse_merge! :flags => []
       db = options[:db]
-      Kernel.p options
+
       # Database host when ssh'ed into the db server
       db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
 
@@ -101,8 +101,12 @@ module Myreplicator
         end
       end
 
-      sql = "SELECT * INTO OUTFILE #{options[:filepath]} FROM #{options[:db]}.#{options[:table]}" 
+      sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
+
+      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
       
+      sql += "FROM #{options[:db]}.#{options[:table]} "
+
       if options[:incremental_col] && options[:incremental_val]
         if options[:incremental_col_type] == "datetime"
           sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
@@ -110,16 +114,12 @@ module Myreplicator
           sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
         end
       end
-
-      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\"'  LINES TERMINATED BY '\n'"
-      
-      puts sql
-
+     
       cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
       cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
       cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
-      cmd += "--execute=\"#{options[:sql]}\" "
+      cmd += "--execute=\"#{sql}\" "
       
       puts cmd
 
