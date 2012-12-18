@@ -79,10 +79,17 @@ module Myreplicator
       exp = Export.find(metadata.export_id)
       unzip(metadata.filename)
       metadata.zipped = false
+      
+      options = {:table_name => exp.table_name, :db => exp.destination_schema,
+        :filepath => metadata.destination_filepath(tmp_dir)}
 
-      cmd = ImportSql.load_data_infile(:table_name => exp.table_name, 
-                                       :db => exp.destination_schema,
-                                       :filepath => metadata.destination_filepath(tmp_dir))
+      if metadata.export_type == "incremental_outfile"
+        options[:fields_terminated_by] = ";~;"
+        options[:lines_terminated_by] = "\\n"
+      end
+
+      cmd = ImportSql.load_data_infile(options)
+
       puts cmd
       
       result = `#{cmd}` # execute
@@ -92,7 +99,6 @@ module Myreplicator
           raise Exceptions::LoaderError.new("Incremental Load #{metadata.filename} Failed!\n#{result}") 
         end
       end
-
     end
 
     ##
