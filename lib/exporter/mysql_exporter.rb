@@ -33,7 +33,9 @@ module Myreplicator
           end
         elsif !is_running?
           # local max value for incremental export
+
           max_value = incremental_export(metadata)
+          #max_value = incremental_export_into_outfile(metadata)
 
           metadata.incremental_val = max_value # store max val in metadata
 
@@ -128,6 +130,8 @@ module Myreplicator
       puts "Exporting..."
       result = execute_export(cmd, metadata)
       check_result(result, 0)
+
+      return max_value
     end
 
 
@@ -142,21 +146,20 @@ module Myreplicator
       max_value = @export_obj.max_value
       @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
 
-      sql = SqlCommands.mysql_export_outfile(:db => @export_obj.source_schema,
+      cmd = SqlCommands.mysql_export_outfile(:db => @export_obj.source_schema,
                                              :table => @export_obj.table_name,
+                                             :filepath => filepath,
                                              :incremental_col => @export_obj.incremental_column,
                                              :incremental_col_type => @export_obj.incremental_column_type,
                                              :incremental_val => @export_obj.max_incremental_value)      
 
-      cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
-                                     :filepath => filepath,
-                                     :sql => sql)
-      
       metadata.export_type = "incremental_outfile"
       update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
       puts "Exporting..."
       result = execute_export(cmd, metadata)
       check_result(result, 0)
+
+      return max_value
     end
 
     ##
