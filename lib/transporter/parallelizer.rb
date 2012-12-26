@@ -1,5 +1,13 @@
 require "thread"
 
+##
+# Executes given Procs in parallel using mulltiple threads
+# Execution are closed under the Transporter class, i.e. all 
+# Transporter methods are accessible
+# Worker threads are managed by another thread which parallizes the process
+# even further using the max_threads option. 
+##
+
 module Myreplicator
   class Parallelizer
 
