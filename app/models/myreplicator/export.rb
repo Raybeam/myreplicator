@@ -121,12 +121,51 @@ module Myreplicator
       return metadata
     end
 
+    ##
+    # List of all avaiable databases from database.yml file
+    # All Export/Load jobs can use these databases
+    ##
     def self.available_dbs
       dbs = ActiveRecord::Base.configurations.keys
       dbs.delete("development")
-      dbs.delete("production")
       dbs.delete("test")
       return dbs
+    end
+
+    ##
+    # NOTE: Provided for Resque use
+    # Schedules all the exports in resque
+    # Requires Resque Scheduler
+    ##
+    def self.schedule_in_resque
+      exports = Export.find(:all)
+      exports.each do |export|
+        if export.active
+          export.schedule
+        else
+          Resque.remove_schedule(export.schedule_name)
+        end
+      end
+      Resque.reload_schedule! # Reload all schedules in Resque
+    end
+
+    ##
+    # Name used for the job in Resque
+    ##
+    def schedule_name
+      name = "#{source_schema}_#{destination_schema}_#{table_name}"
+    end
+
+    ##
+    # Schedules the export job in Resque
+    ##
+    def schedule
+      Resque.set_schedule(schedule_name, {
+                            :cron => cron,
+                            :class => "Myreplicator::Export",
+                            :queue => "myreplicator_export",
+                            :args => id
+                          })
     end
 
     ##
