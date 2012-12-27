@@ -2,7 +2,9 @@ require "exporter"
 
 module Myreplicator
   class Transporter
-    
+
+    @queue = :myreplicator_transporter # Provided for Resque
+
     def initialize *args
       options = args.extract_options!
     end
@@ -12,13 +14,22 @@ module Myreplicator
       Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
       @tmp_dir
     end
+
+    ##
+    # Main method provided for resque
+    ##
+    def self.perform
+      transfer # Kick off the load process
+    end
     
     ##
     # Connects to all unique database servers 
     # downloads export files concurrently from multiple sources
-    # TO DO: Clean up after transfer job is done
+ 
+   # TO DO: Clean up after transfer job is done
+
     ##
-    def transfer
+    def self.transfer
       unique_jobs = Export.where("state != 'failed' and active = 1").group("source_schema")
       
       unique_jobs.each do |export|
@@ -28,7 +39,7 @@ module Myreplicator
 
     ##
     # Connect to server via SSH
-    # Kicks of parallel download
+    # Kicks off parallel download
     ##
     def download export
       ssh = export.ssh_to_source     
