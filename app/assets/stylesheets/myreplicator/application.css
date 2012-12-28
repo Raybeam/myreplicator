@@ -129,7 +129,7 @@ html { overflow-y:scroll;overflow-x:auto; }
   padding-left:20px;
   margin-top:-10px;
 }
-.home-menu span {
+.home-menu > span {
   color:#474747;
   display:block;
   float:left;
@@ -150,6 +150,7 @@ html { overflow-y:scroll;overflow-x:auto; }
   letter-spacing:1px;
   margin:8px 15px 8px 0; 
   padding:3px 12px;
+  position:relative;
   text-decoration:none;
   -webkit-transition: all 0.25s ease-in-out;
   -moz-transition: all 0.25s ease-in-out;
@@ -178,7 +179,31 @@ html { overflow-y:scroll;overflow-x:auto; }
   text-shadow: 0 1px #f9f9f9;  
 }
 .home-menu a:active {background:#e0e0e0;}
-
+.home-menu a span {
+  background:#990000;
+  box-shadow:0 0 3px rgba(0,0,0,0.4);
+  border-radius:999px;
+  color:#fff;
+  font-size:11px;
+  font-weight:normal;
+  height:13px;
+  display:block;
+  opacity:0;
+  padding:0 0 3px 1px;
+  position:absolute;
+  top:-7px;
+  right:-5px;
+  text-align:center;
+  text-shadow:1px 1px #333;
+  width:13px;
+  -webkit-transition: all 0.25s ease-in-out;
+  -moz-transition: all 0.25s ease-in-out;
+  -o-transition: all 0.25s ease-in-out;
+  transition: all 0.25s ease-in-out;     
+}
+.home-menu a.overview span {background:#1F6015;}
+.home-menu a:hover span,
+.home-menu a.on span {opacity:1;}
 #sub-header a.active{
   background:#666;  
   background-image: -moz-linear-gradient(top, #555, #777);
@@ -201,6 +226,14 @@ h2 {
   font-size:18px;
   text-shadow:0 1px #fff;
 	margin:20px;
+}
+
+h6 {
+  color:#474747;
+  font-size:14px;
+  font-weight:normal;
+  text-shadow:0 1px #fff;
+  margin:10px 5px;
 }
 
 form {margin:5px 20px;}
@@ -324,15 +357,9 @@ div.flash {
   z-index:110;
 }
 
-div.table-wrapper {
-  margin:10px 20px;
-}
+div.table-wrapper { margin:10px 20px; }
 
-table.data-grid {
-  font-size:12px; 
-  margin:10px 0;
-  width:100%;
-}
+table.data-grid { font-size:12px; margin:10px 0; width:100%; }
 table.data-grid thead tr,
 #states-list thead tr{
   background-color:#ddd;
@@ -542,3 +569,19 @@ p.hint {color:#474747;font-size:12px;line-height:20px;margin:8px 5px;width:300px
   margin:0 0 10px;  
   text-transform:capitalize;
 }
+
+table.overview {
+  width:100%;
+}
+
+table.overview td {
+  border-bottom:1px solid #eee;
+  font-size:12px;
+  padding:5px 8px 5px 5px;
+  text-shadow: 0 1px #fff;
+  vertical-align:middle;
+}
+table.overview tr:nth-child(even) {background:#fbfbfb;}
+table.overview tr:last-child td {border-bottom:0px;}
+table.overview td span.name {color:#474747;display:block;font-weight:bold; font-size:13px;padding-bottom:5px;}
+table.overview td span.file {color:#999;display:block;font-style:italic;}
