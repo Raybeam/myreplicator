@@ -31,6 +31,7 @@ module Myreplicator
             metadata.state = "export_completed"
             wrapup metadata
           end
+
         elsif !is_running?
           # local max value for incremental export
 

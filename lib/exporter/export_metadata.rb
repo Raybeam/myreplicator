@@ -32,6 +32,7 @@ module Myreplicator
       end
     end
     
+    # BOB : This only handles gzipped files, is that what you want?
     def filename
       name = filepath.split("/").last
       name = zipped ? "#{name}.gz" : name
@@ -44,7 +45,7 @@ module Myreplicator
 
     ##
     # Keeps track of the state of the export
-    # Store itself in a JSON file on exit
+    # Stores itself in a JSON file on exit
     ##
     def self.record *args
       options = args.extract_options!
@@ -160,6 +161,11 @@ module Myreplicator
       return path
     end
 
+    ##
+    # Writes Json to file using echo
+    # file is written to remote server via SSH
+    # Echo is used for writing the file
+    ##
     def store!
       cmd = "echo \"#{self.to_json.gsub("\"","\\\\\"")}\" > #{@filepath}.json"
       puts cmd
@@ -175,6 +181,7 @@ module Myreplicator
 
     def set_attributes options
       options.symbolize_keys!
+
       @export_time = options[:export_time] if options[:export_time]
       @table = options[:table] if options[:table]
       @database = options[:database] if options[:database]

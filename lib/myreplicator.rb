@@ -47,6 +47,11 @@ module Myreplicator
 
   end
 
+  # BOB : Usually you'd make a Myreplicator::Error inherit from StandardError,
+  # then make all of the other exceptions inherit from Myreplicator::Error
+  # With the way you have it set up, I can't catch all Myreplicator errors without specifying
+  # each individually.
+  # Check out how ActiveRecord sets up its errors for an example
   module Exceptions
     class MissingArgs < StandardError; end
     class ExportError < StandardError; end

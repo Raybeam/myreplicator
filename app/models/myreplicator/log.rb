@@ -69,6 +69,9 @@ module Myreplicator
   
       if logs.count > 0
         logs.each do |log|
+          # BOB : All you're doing is checking if the pid file exists
+          # If there is a machine failure the file will exist but the process will not
+          # Shouldn't you check if the pid is active?
           if File.exists? "/proc/#{log.pid.to_s}"
             puts "still running #{filepath}"
             return true

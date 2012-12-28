@@ -3,6 +3,8 @@ require "exporter"
 module Myreplicator
   class Loader
     
+    @queue = :myreplicator_load # Provided for Resque
+    
     def initialize *args
       options = args.extract_options!
     end
@@ -11,10 +13,22 @@ module Myreplicator
       @tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
     end
 
-    def load
+    ##
+    # Main method provided for resque
+    ##
+    def self.perform
+      load # Kick off the load process
+    end
+
+    ##
+    # Kicks off all initial loads first and then all incrementals
+    # Looks at metadata files stored locally
+    ##
+    def self.load
       initials = []
       incrementals = []
 
+      # Read all metadata files
       metadata_files.each do |metadata|
         if metadata.export_type == "initial"
           initials << metadata
@@ -22,7 +36,8 @@ module Myreplicator
           incrementals << metadata
         end
       end
-      
+
+      # Load all new tables
       initials.each do |metadata| 
         puts metadata.table
 
@@ -37,6 +52,7 @@ module Myreplicator
         cleanup metadata
       end
 
+      # Load all incremental files
       incrementals.each do |metadata|
         puts metadata.table
         Log.run(:job_type => "loader", 
