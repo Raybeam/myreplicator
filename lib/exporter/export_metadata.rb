@@ -45,7 +45,7 @@ module Myreplicator
 
     ##
     # Keeps track of the state of the export
-    # Store itself in a JSON file on exit
+    # Stores itself in a JSON file on exit
     ##
     def self.record *args
       options = args.extract_options!
@@ -161,8 +161,11 @@ module Myreplicator
       return path
     end
 
-    # BOB : I don't understand this, why are you using the command line to echo to a file
-    # rather than just store the json directly to a file?
+    ##
+    # Writes Json to file using echo
+    # file is written to remote server via SSH
+    # Echo is used for writing the file
+    ##
     def store!
       cmd = "echo \"#{self.to_json.gsub("\"","\\\\\"")}\" > #{@filepath}.json"
       puts cmd
@@ -179,8 +182,6 @@ module Myreplicator
     def set_attributes options
       options.symbolize_keys!
 
-      # BOB : Check out instance_variable_set
-      # I think it will help you here
       @export_time = options[:export_time] if options[:export_time]
       @table = options[:table] if options[:table]
       @database = options[:database] if options[:database]

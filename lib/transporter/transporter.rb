@@ -21,6 +21,17 @@ module Myreplicator
     def self.perform
       transfer # Kick off the load process
     end
+
+    ##
+    # Schedules the transport job in Resque
+    ##
+    def schedule cron
+      Resque.set_schedule("myreplicator_transporter", {
+                            :cron => cron,
+                            :class => "Myreplicator::Transporter",
+                            :queue => "myreplicator_transporter"
+                          })
+    end
     
     ##
     # Connects to all unique database servers 
@@ -88,7 +99,7 @@ module Myreplicator
           Log.run(:job_type => "transporter", :name => "export_file",
                   :file => dump_file, :export_id => export.id) do |log|
             puts "Downloading #{dump_file}"
-            sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))             
+            sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
           end
         end
       }
