@@ -1,48 +1,25 @@
 <%= render :partial => 'home_menu' %>
-<% states = @exports.group_by(&:state) %>
 <div id="overview-wrapper">
-  <div id="simple-wrapper">
-    <table id="states-list">
-      <thead>
-        <tr>
-          <th>State</th>
-          <th class="centered">Count</th>
-        </tr>
-      </thead>
-      <tbody>
-    <% states.each do |state, exports| %>
-      <tr>
-        <td><a href="#<%= state.downcase %>_state" class="state-toggle"><%= state %></a></td>
-        <td class="c"><%= exports.size %></td>
-      </tr>
-    <% end %>
-      </tbody>
-    </table>
-    <p class="hint">***click a state to view export list</p>
-  </div>
-  <ul id="states-tables">
-    <% states.each do |state, exports| %>
-    <li id="<%= state.downcase %>_state">
-      <h4><%= state %> Exports</h4>
-      <table class="data-grid">
-        <thead>
-          <tr>
-            <th>Table</th>
-            <th>Schema</th>
-            <th>Updated</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% exports.sort{|a,b| b.updated_at<=>a.updated_at}.each do |ex| %>
-            <td><%= ex.table_name %></td>
-            <td><%= ex.source_schema %></td>
-            <td><%= ex.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
-          <% end %>
-        </tbody>
-      </table>
-    </li>
-    <% end %>
-  </ul>
+<h6>Running tasks</h6>
+<table class="overview">
+  <% @logs.each do |log| %>
+  <tr>
+    <td>
+      <span class="name"><%= log.name %></span>
+      <span class="file"><%= log.file %></span>
+    </td>
+    <td><%= log.state %></td>
+    <td><%= log.job_type %></td>
+    <td><%= log.started_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
+    <td><%= chronos(@now.to_i - log.started_at.to_i) %></td>
+  </tr>
+  <% end %>
+</table>
+
+
+
+
+
 </div>
 <script>
 jQuery(function(){

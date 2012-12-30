@@ -1,5 +1,9 @@
+<% 
+  err = err_count 
+  run = run_count
+%>
 <div class="home-menu">
   <span>lists:</span>
-  <a href="<%= root_url %>" class="<% if @option == 'overview' %>on<% end %>">overview</a>
-  <a href="<%= errors_path %>" class="<% if @option == 'errors' %>on<% end %>">errors</a>
+  <a href="<%= root_url %>" class="<% if @option == 'overview' %>on<% end %> overview">overview <% if run > 0 %><span><%= run %></span><% end %></a>
+  <a href="<%= errors_path %>" class="<% if @option == 'errors' %>on<% end %>">errors <% if err > 0 %><span><%= err %></span><% end %></a>
 </div>

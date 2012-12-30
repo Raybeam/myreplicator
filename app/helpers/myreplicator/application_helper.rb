@@ -8,5 +8,25 @@ module Myreplicator
       link_to content_tag(:span, title), {:sort => column, :direction => direction}, {:class => css_class}
     end
 
+    def chronos(secs)
+      [[60, :seconds], [60, :minutes], [24, :hours], [1000, :days]].map{ |count, name|
+        if secs > 0
+          secs, n = secs.divmod(count)
+          "#{n.to_i} #{name}"
+        end
+      }.compact.reverse.join(', ')
+    end
+
+    def err_count
+      total = Log.where(:state => 'error').count
+      return total
+    end
+
+
+    def run_count
+      total = Log.where(:state => 'running').count
+      return total
+    end
+
   end
 end
