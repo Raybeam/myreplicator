@@ -64,24 +64,25 @@ module Myreplicator
       end
     end
 
+    ##
+    # Checks to see if the PID of the log is active or not
+    ##
     def running?
       logs = Log.where(:file => file, :job_type => job_type, :state => "running")
   
       if logs.count > 0
         logs.each do |log|
-          # BOB : All you're doing is checking if the pid file exists
-          # If there is a machine failure the file will exist but the process will not
-          # Shouldn't you check if the pid is active?
-          if File.exists? "/proc/#{log.pid.to_s}"
+          begin
+            Process.getpgid(log.pid)
             puts "still running #{filepath}"
             return true
-          else
+          rescue Errno::ESRCH
             log.state = "error"
             log.save!
           end
         end
       end
-
+      
       return false
     end
 

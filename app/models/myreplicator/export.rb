@@ -173,9 +173,6 @@ module Myreplicator
     # Handles connecting to multiple databases
     ##
 
-    # BOB : Not sure what I think of inner classes
-    # Is this class used anywhere else in the app?
-    # If so, I'd namespace it in it own file (e.g. Export::SourceDb)
     class SourceDb < ActiveRecord::Base
       
       def self.connect db
