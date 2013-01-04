@@ -32,7 +32,6 @@ module Myreplicator
       end
     end
     
-    # BOB : This only handles gzipped files, is that what you want?
     def filename
       name = filepath.split("/").last
       name = zipped ? "#{name}.gz" : name
