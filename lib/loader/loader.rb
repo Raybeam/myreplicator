@@ -23,13 +23,27 @@ module Myreplicator
     ##
     # Kicks off all initial loads first and then all incrementals
     # Looks at metadata files stored locally
+    # Note: Initials are loaded sequentially
     ##
     def self.load
       initials = []
       incrementals = []
+      metadata = metadata_files
+
+      metadata.each do |m|
+        if m.export_type == "initial"
+          initials << m # Add initial to the list
+          metadata.each do |md|
+            if m.equals(md) && md.export_type == "incremental"
+              initials << md # incremental should happen after the initial load
+              metadata.delete(md) # remove from current list of files
+            end
+          end
+        end
+      end
 
       # Read all metadata files
-      metadata_files.each do |metadata|
+      files.each do |metadata|
         if metadata.export_type == "initial"
           initials << metadata
         else
@@ -37,7 +51,14 @@ module Myreplicator
         end
       end
 
-      # Load all new tables
+    end
+    
+    ##
+    # Loads all new tables concurrently
+    # multiple files 
+    ## 
+    def self.initial_loads initials
+      procs = []
       initials.each do |metadata| 
         puts metadata.table
 
@@ -46,21 +67,25 @@ module Myreplicator
                 :file => metadata.filename, 
                 :export_id => metadata.export_id) do |log|
           
-          initial_load metadata
+          Loader.initial_load metadata
         end
 
         cleanup metadata
       end
+      
+    end
 
+    def self.incremental_loads incrementals
       # Load all incremental files
       incrementals.each do |metadata|
         puts metadata.table
+
         Log.run(:job_type => "loader", 
                 :name => "incremental_import", 
                 :file => metadata.filename, 
                 :export_id => metadata.export_id) do |log|
 
-          incremental_load metadata
+          Loader.incremental_load metadata
         end
         cleanup metadata
       end
@@ -69,9 +94,9 @@ module Myreplicator
     ##
     # Creates table and loads data
     ##
-    def initial_load metadata
+    def self.initial_load metadata
       exp = Export.find(metadata.export_id)
-      unzip(metadata.filename)
+      Loader.unzip(metadata.filename)
       metadata.zipped = false
 
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
@@ -91,9 +116,9 @@ module Myreplicator
     # Loads data incrementally
     # Uses the values specified in the metadatta object
     ##
-    def incremental_load metadata
+    def self.incremental_load metadata
       exp = Export.find(metadata.export_id)
-      unzip(metadata.filename)
+      Loader.unzip(metadata.filename)
       metadata.zipped = false
       
       options = {:table_name => exp.table_name, :db => exp.destination_schema,
@@ -120,7 +145,7 @@ module Myreplicator
     ##
     # Deletes the metadata file and extract
     ##
-    def cleanup metadata
+    def self.cleanup metadata
       puts "Cleaning up..."
       FileUtils.rm "#{metadata.destination_filepath(tmp_dir)}.json" # json file
       FileUtils.rm metadata.destination_filepath(tmp_dir) # dump file
@@ -130,7 +155,7 @@ module Myreplicator
     # Unzips file
     # Checks if the file exists or already unzipped
     ##
-    def unzip filename
+    def self.unzip filename
       cmd = "cd #{tmp_dir}; gunzip #{filename}"
       passed = false
       if File.exist?(File.join(tmp_dir,filename))
@@ -151,7 +176,7 @@ module Myreplicator
       raise Exceptions::LoaderError.new("Unzipping #{filename} Failed!") unless passed
     end
 
-    def metadata_files
+    def self.metadata_files
       files = []
       Dir.glob(File.join(tmp_dir, "*.json")).each do |json_file|
         files << ExportMetadata.new(:metadata_path => json_file)

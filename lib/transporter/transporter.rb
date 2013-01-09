@@ -52,7 +52,7 @@ module Myreplicator
     # Connect to server via SSH
     # Kicks off parallel download
     ##
-    def download export
+    def self.download export
       ssh = export.ssh_to_source     
       parallel_download(export, ssh, completed_files(ssh, export))
     end
@@ -61,7 +61,7 @@ module Myreplicator
     # Gathers all files that need to be downloaded
     # Gives the queue to parallelizer library to download in parallel
     ##
-    def parallel_download export, ssh, files    
+    def self.parallel_download export, ssh, files    
       p = Parallelizer.new
       
       files.each do |filename|
@@ -80,7 +80,7 @@ module Myreplicator
     # 3. Gets dump file location from metadata
     # 4. Downloads dump file
     ##
-    def download_file    
+    def self.download_file    
       proc = Proc.new { |params|
         ssh = params[0]
         export = params[1] 
@@ -90,11 +90,11 @@ module Myreplicator
                 :file => filename, :export_id => export.id) do |log|
 
           sftp = export.sftp_to_source
-          json_file = remote_path(export, filename) 
+          json_file = Transporter.remote_path(export, filename) 
           json_local_path = File.join(tmp_dir,filename)
           puts "Downloading #{json_file}"
           sftp.download!(json_file, json_local_path)
-          dump_file = get_dump_path(json_local_path)
+          dump_file = Transporter.get_dump_path(json_local_path)
 
           Log.run(:job_type => "transporter", :name => "export_file",
                   :file => dump_file, :export_id => export.id) do |log|
@@ -108,7 +108,7 @@ module Myreplicator
     ##
     # Gets all files ready to be exported from server
     ##
-    def completed_files ssh, export
+    def self.completed_files ssh, export
       done_files = ssh.exec!(get_done_files(export))
 
       unless done_files.blank?
@@ -121,7 +121,7 @@ module Myreplicator
     ##
     # Reads metadata file for the export path
     ##
-    def get_dump_path json_path
+    def self.get_dump_path json_path
       metadata = ExportMetadata.new(:metadata_path => json_path)
       return metadata.export_path
     end
@@ -129,14 +129,14 @@ module Myreplicator
     ##
     # Returns where path of dump files on remote server 
     ## 
-    def remote_path export, filename
+    def self.remote_path export, filename
       File.join(Myreplicator.configs[export.source_schema]["ssh_tmp_dir"], filename)
     end
 
     ##
     # Command for list of done files
     ## 
-    def get_done_files export
+    def self.get_done_files export
       cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -l export_completed *.json"
     end
     

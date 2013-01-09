@@ -32,7 +32,6 @@ module Myreplicator
       end
     end
     
-    # BOB : This only handles gzipped files, is that what you want?
     def filename
       name = filepath.split("/").last
       name = zipped ? "#{name}.gz" : name
@@ -41,6 +40,17 @@ module Myreplicator
 
     def destination_filepath tmp_dir
       File.join(tmp_dir, filename)
+    end
+
+    ##
+    # Compares the object with another metadata object
+    # Return true if they are for the same table
+    ## 
+    def equals object
+      if table == object.table && database == object.database
+        return true
+      end
+      return false
     end
 
     ##
