@@ -45,12 +45,13 @@ module Myreplicator
           sleep 1
         end
       end   
-
+      
+      # Run manager if thread size never reached max
       manage_threads unless @manager_running
 
       # Waits until all threads are completed
       # Before exiting
-      while !@done
+      while !done?
         sleep 1
       end
 
@@ -73,7 +74,7 @@ module Myreplicator
           
           # If no more jobs are left, mark done
 
-          if @queue.size == 0 && @threads.size == 0
+          if done?
             @done = true
           else
             sleep 2 # Wait for more threads to spawn
@@ -81,6 +82,17 @@ module Myreplicator
 
         end
       end
+    end
+
+    ##
+    # Returns true when all jobs are processed and
+    # no thread is running
+    ##
+    def done?
+      if @queue.size == 0 && @threads.size == 0
+        return true
+      end
+      return false
     end
 
   end

@@ -36,9 +36,6 @@ module Myreplicator
     ##
     # Connects to all unique database servers 
     # downloads export files concurrently from multiple sources
- 
-   # TO DO: Clean up after transfer job is done
-
     ##
     def self.transfer
       unique_jobs = Export.where("state != 'failed' and active = 1").group("source_schema")
@@ -62,7 +59,7 @@ module Myreplicator
     # Gives the queue to parallelizer library to download in parallel
     ##
     def self.parallel_download export, ssh, files    
-      p = Parallelizer.new(:klass => "Transporter")
+      p = Parallelizer.new(:klass => "Myreplicator::Transporter")
       
       files.each do |filename|
         puts filename
@@ -100,6 +97,9 @@ module Myreplicator
                   :file => dump_file, :export_id => export.id) do |log|
             puts "Downloading #{dump_file}"
             sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
+            # clear files
+            ssh.exec!("rm #{json_file}")
+            ssh.exec!("rm #{dump_file}")
           end
         end
       }
@@ -135,9 +135,10 @@ module Myreplicator
 
     ##
     # Command for list of done files
+    # Grep -s used to supress error messages
     ## 
     def self.get_done_files export
-      cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -l export_completed *.json"
+      cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -ls export_completed *.json"
     end
     
   end

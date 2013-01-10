@@ -33,7 +33,7 @@ module Myreplicator
 
       metadata.each do |m|
         if m.export_type == "initial"
-
+          Kernel.p m
           initials << m # Add initial to the list
           metadata.delete(m) # Delete obj from mixed list
 
@@ -62,6 +62,8 @@ module Myreplicator
       procs.each do |proc|
         p.queue << {:params => [], :block => proc}
       end
+      
+      p.run
     end
 
     ##
@@ -73,9 +75,8 @@ module Myreplicator
 
       initials.each do |metadata| 
         procs << Proc.new {
-          puts metadata.table
           Log.run(:job_type => "loader", 
-                  :name => "initial_import", 
+                  :name => "#{metadata.export_type}_import", 
                   :file => metadata.filename, 
                   :export_id => metadata.export_id) do |log|
             
@@ -130,7 +131,7 @@ module Myreplicator
         incrementals.each do |md| 
           if metadata.equals(md)
             group << md
-            metadata.delete(md) # remove from main array
+            incrementals.delete(md) # remove from main array
           end
         end
         
