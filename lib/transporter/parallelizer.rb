@@ -18,6 +18,7 @@ module Myreplicator
       @queue = Queue.new
       @threads = []
       @max_threads = options[:max_threads].nil? ? 10 : options[:max_threads]     
+      @klass = options[:klass].constantize
     end
 
     ##
@@ -33,7 +34,7 @@ module Myreplicator
         if @threads.size <= @max_threads
           @threads << Thread.new(@queue.pop) do |proc|
             Thread.current[:status] = 'running' # Manually Set Thread state for Checks
-            Transporter.new.instance_exec(proc[:params], &proc[:block])
+            @klass.new.instance_exec(proc[:params], &proc[:block])
             Thread.current[:status] = 'done' 
           end
         else

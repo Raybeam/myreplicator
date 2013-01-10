@@ -44,8 +44,11 @@ module Myreplicator
     # Runs the export process using the required Exporter library
     ##
     def export_table
-      exporter = MysqlExporter.new
-      exporter.export_table self    
+      Log.run(:job_type => "export", :name => schedule_name, 
+              :file => filename, :export_id => id) do |log|
+        exporter = MysqlExporter.new
+        exporter.export_table self    
+      end
     end
 
     def filename

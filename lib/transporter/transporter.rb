@@ -62,7 +62,7 @@ module Myreplicator
     # Gives the queue to parallelizer library to download in parallel
     ##
     def self.parallel_download export, ssh, files    
-      p = Parallelizer.new
+      p = Parallelizer.new(:klass => "Transporter")
       
       files.each do |filename|
         puts filename

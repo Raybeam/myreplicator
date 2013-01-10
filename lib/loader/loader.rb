@@ -24,15 +24,19 @@ module Myreplicator
     # Kicks off all initial loads first and then all incrementals
     # Looks at metadata files stored locally
     # Note: Initials are loaded sequentially
+    # If there is a 
     ##
     def self.load
       initials = []
       incrementals = []
-      metadata = metadata_files
+      metadata = Loader.metadata_files
 
       metadata.each do |m|
         if m.export_type == "initial"
+
           initials << m # Add initial to the list
+          metadata.delete(m) # Delete obj from mixed list
+
           metadata.each do |md|
             if m.equals(md) && md.export_type == "incremental"
               initials << md # incremental should happen after the initial load
@@ -41,56 +45,100 @@ module Myreplicator
           end
         end
       end
+      
+      incrementals = metadata # Remaining are all incrementals
+      
+      initial_procs = Loader.initial_loads initials
+      parallel_load initial_procs
 
-      # Read all metadata files
-      files.each do |metadata|
-        if metadata.export_type == "initial"
-          initials << metadata
-        else
-          incrementals << metadata
-        end
-      end
-
+      incremental_procs = Loader.incremental_loads incrementals
+      parallel_load incremental_procs
     end
     
+    def self.parallel_load procs
+      p = Parallelizer.new(:klass => "Transporter")
+      procs.each do |proc|
+        p.queue << {:params => [], :block => proc}
+      end
+    end
+
     ##
     # Loads all new tables concurrently
     # multiple files 
     ## 
     def self.initial_loads initials
       procs = []
+
       initials.each do |metadata| 
-        puts metadata.table
-
-        Log.run(:job_type => "loader", 
-                :name => "initial_import", 
-                :file => metadata.filename, 
-                :export_id => metadata.export_id) do |log|
-          
-          Loader.initial_load metadata
-        end
-
-        cleanup metadata
+        procs << Proc.new {
+          puts metadata.table
+          Log.run(:job_type => "loader", 
+                  :name => "initial_import", 
+                  :file => metadata.filename, 
+                  :export_id => metadata.export_id) do |log|
+            
+            Loader.initial_load metadata
+            Loader.cleanup metadata
+          end
+        }
       end
-      
+
+      return procs
     end
 
+    ##
+    # Load all incremental files
+    # Ensures that multiple loads to the same table
+    # happen sequentially.
+    ##
     def self.incremental_loads incrementals
-      # Load all incremental files
-      incrementals.each do |metadata|
-        puts metadata.table
-
-        Log.run(:job_type => "loader", 
-                :name => "incremental_import", 
-                :file => metadata.filename, 
-                :export_id => metadata.export_id) do |log|
-
-          Loader.incremental_load metadata
-        end
-        cleanup metadata
-      end
+      groups = Loader.group_incrementals incrementals
+      procs = []
+      groups.each do |group|
+        procs << Proc.new {
+          group.each do |metadata|
+            Log.run(:job_type => "loader", 
+                    :name => "incremental_import", 
+                    :file => metadata.filename, 
+                    :export_id => metadata.export_id) do |log|
+              
+              Loader.incremental_load metadata
+              Loader.cleanup metadata
+            end
+          end # group
+        }
+      end # groups
+      
+      return procs
     end
 
+    ##
+    # Groups all incrementals files for 
+    # the same table together
+    # Returns and array of arrays
+    # NOTE: Each Arrays should be processed in 
+    # the same thread to avoid collision 
+    ##
+    def self.group_incrementals incrementals
+      groups = [] # array of all grouped incrementals
+
+      incrementals.each do |metadata|
+        group = [metadata]
+
+        incrementals.each do |md| 
+          if metadata.equals(md)
+            group << md
+            metadata.delete(md) # remove from main array
+          end
+        end
+        
+        incrementals.delete(metadata)
+        groups << group
+      end
+
+      return groups
+    end
+    
     ##
     # Creates table and loads data
     ##
