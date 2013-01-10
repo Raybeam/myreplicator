@@ -1,5 +1,5 @@
 require "myreplicator/engine"
-
+require "exporter"
 
 module Myreplicator
   mattr_accessor(:app_root, 

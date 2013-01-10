@@ -9,7 +9,7 @@ module Myreplicator
       options = args.extract_options!
     end
     
-    def tmp_dir
+    def self.tmp_dir
       @tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
     end
 
@@ -49,14 +49,16 @@ module Myreplicator
       incrementals = metadata # Remaining are all incrementals
       
       initial_procs = Loader.initial_loads initials
+      Kernel.p initial_procs
       parallel_load initial_procs
 
       incremental_procs = Loader.incremental_loads incrementals
+      Kernel.p incremental_procs
       parallel_load incremental_procs
     end
     
     def self.parallel_load procs
-      p = Parallelizer.new(:klass => "Transporter")
+      p = Parallelizer.new(:klass => "Myreplicator::Transporter")
       procs.each do |proc|
         p.queue << {:params => [], :block => proc}
       end
