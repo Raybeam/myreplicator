@@ -51,8 +51,10 @@ module Myreplicator
     # POST /exports.json
     def create
       @export = Export.new(params[:export])
+      @export.schedule # schedule in resque
+
       @dbs = get_dbs
-  
+
       respond_to do |format|
         if @export.save
           format.html { redirect_to @export, notice: 'Export was successfully created.' }
