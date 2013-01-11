@@ -45,6 +45,7 @@ module Myreplicator
       @dbs = get_dbs
       @tables = db_metadata
       @edit = true
+      @export.schedule # schedule in resque
     end
   
     # POST /exports
@@ -70,6 +71,7 @@ module Myreplicator
     # PUT /exports/1.json
     def update
       @export = Export.find(params[:id])
+      @export.schedule # schedule in resque
       @dbs = get_dbs
   
       respond_to do |format|
