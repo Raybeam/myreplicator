@@ -131,6 +131,7 @@ module Myreplicator
     def self.available_dbs
       dbs = ActiveRecord::Base.configurations.keys
       dbs.delete("development")
+      dbs.delete("production")
       dbs.delete("test")
       return dbs
     end
