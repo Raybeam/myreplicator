@@ -85,8 +85,12 @@ module Myreplicator
     # DELETE /exports/1.json
     def destroy
       @export = Export.find(params[:id])
+
+      # remove from Resque
+      Resque.remove_schedule(@export.schedule_name)
+
       @export.destroy
-  
+
       respond_to do |format|
         format.html { redirect_to exports_url }
         format.json { head :no_content }
