@@ -24,6 +24,8 @@ export_type = ["incremental","fulldump"]
 <%= f.select :table_name, [] %>
 <label>Incremental Column</label>
 <%= f.text_field :incremental_column %>
+<label>Incremental Column Type</label>
+<%= f.text_field :incremental_column_type %>
 <label>Maximum Incremental Value</label>
 <%= f.text_field :max_incremental_value %>
 <label>S3 Path</label>

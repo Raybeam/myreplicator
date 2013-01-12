@@ -51,6 +51,13 @@ module Myreplicator
       end
     end
 
+    def incremental_export?
+      if export_type == "incremental"
+        return true
+      end
+      return false
+    end
+
     def filename
       @file_name ||= "#{source_schema}_#{table_name}_#{Time.now.to_i}.tsv"
     end
