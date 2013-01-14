@@ -32,7 +32,6 @@ module Myreplicator
 
       all_files.each do |m|
         if m.export_type == "initial"
-          Kernel.p m
           initials << m # Add initial to the list
           all_files.delete(m) # Delete obj from mixed list
 
