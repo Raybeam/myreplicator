@@ -91,18 +91,40 @@ module Myreplicator
           json_local_path = File.join(tmp_dir,filename)
           puts "Downloading #{json_file}"
           sftp.download!(json_file, json_local_path)
-          dump_file = Transporter.get_dump_path(json_local_path)
+          metadata = Transporter.metadata_obj(json_local_path)
+          dump_file = metadata.export_path
 
-          Log.run(:job_type => "transporter", :name => "export_file",
-                  :file => dump_file, :export_id => export.id) do |log|
-            puts "Downloading #{dump_file}"
-            sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
-            # clear files
-            ssh.exec!("rm #{json_file}")
-            ssh.exec!("rm #{dump_file}")
-          end
+          if metadata.state == "export_completed"
+            Log.run(:job_type => "transporter", :name => "export_file",
+                    :file => dump_file, :export_id => export.id) do |log|
+              puts "Downloading #{dump_file}"
+              sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
+              Transporter.remove!(ssh, json_file, dump_file)
+            end
+          elsif Transporter.junk_file?(metadata)
+            Transporter.remove!(ssh, json_file, dump_file)
+          end #if
+
         end
       }
+    end
+
+    ##
+    # Returns true if the file should be deleted
+    ##
+    def self.junk_file? metadata
+      case metadata.state
+      when "failed"
+        return true
+      when "ignored"
+        return true
+      end
+      return false
+    end
+
+    def self.remove! ssh, json_file, dump_file
+      ssh.exec!("rm #{json_file}")
+      ssh.exec!("rm #{dump_file}")           
     end
 
     ##
@@ -118,11 +140,16 @@ module Myreplicator
       return []
     end
 
+    def self.metadata_obj json_path
+      metadata = ExportMetadata.new(:metadata_path => json_path)
+      return metadata
+    end
+
     ##
     # Reads metadata file for the export path
     ##
-    def self.get_dump_path json_path
-      metadata = ExportMetadata.new(:metadata_path => json_path)
+    def self.get_dump_path json_path, metadata = nil
+      metadata = Transporter.metadata_obj(json_path) if metadata.nil?
       return metadata.export_path
     end
 

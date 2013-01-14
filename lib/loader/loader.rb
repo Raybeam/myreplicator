@@ -24,41 +24,38 @@ module Myreplicator
     # Kicks off all initial loads first and then all incrementals
     # Looks at metadata files stored locally
     # Note: Initials are loaded sequentially
-    # If there is a 
     ##
     def self.load
       initials = []
       incrementals = []
-      metadata = Loader.metadata_files
+      all_files = Loader.metadata_files
 
-      metadata.each do |m|
+      all_files.each do |m|
         if m.export_type == "initial"
           Kernel.p m
           initials << m # Add initial to the list
-          metadata.delete(m) # Delete obj from mixed list
+          all_files.delete(m) # Delete obj from mixed list
 
-          metadata.each do |md|
+          all_files.each do |md|
             if m.equals(md) && md.export_type == "incremental"
               initials << md # incremental should happen after the initial load
-              metadata.delete(md) # remove from current list of files
+              all_files.delete(md) # remove from current list of files
             end
           end
         end
       end
       
-      incrementals = metadata # Remaining are all incrementals
+      incrementals = all_files # Remaining are all incrementals
       
       initial_procs = Loader.initial_loads initials
-      Kernel.p initial_procs
       parallel_load initial_procs
 
       incremental_procs = Loader.incremental_loads incrementals
-      Kernel.p incremental_procs
       parallel_load incremental_procs
     end
     
     def self.parallel_load procs
-      p = Parallelizer.new(:klass => "Myreplicator::Transporter")
+      p = Parallelizer.new(:klass => "Myreplicator::Loader")
       procs.each do |proc|
         p.queue << {:params => [], :block => proc}
       end
@@ -127,7 +124,9 @@ module Myreplicator
 
       incrementals.each do |metadata|
         group = [metadata]
+        incrementals.delete(metadata)
 
+        # look for same loads
         incrementals.each do |md| 
           if metadata.equals(md)
             group << md
@@ -135,10 +134,8 @@ module Myreplicator
           end
         end
         
-        incrementals.delete(metadata)
         groups << group
       end
-
       return groups
     end
     

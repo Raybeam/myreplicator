@@ -19,36 +19,21 @@ module Myreplicator
                             :filepath => filepath,
                             :incremental_col => @export_obj.incremental_column) do |metadata|
 
-        metadata.on_failure do |m|
-          update_export(:state => "failed", :export_finished_at => Time.now, :error => metadata.error)
-        end
-
         prepare metadata
 
-        if @export_obj.state == "new"
+        case @export_obj.export_type?
+        when :new
+          on_failure_state_trans(metadata, "new") # If failed, go back to new
+          on_export_success(metadata)
           initial_export metadata
-          metadata.on_success do |m|
-            metadata.state = "export_completed"
-            wrapup metadata
-          end
 
-        elsif !is_running?
-          # local max value for incremental export
-
-          max_value = incremental_export(metadata)
-          #max_value = incremental_export_into_outfile(metadata)
-
-          metadata.incremental_val = max_value # store max val in metadata
-
-          # Call back that updates the maximum value of incremental col
-          metadata.on_success do |m|
-            metadata.state = "export_completed"
-            wrapup metadata
-            @export_obj.update_max_val(max_value) #  update max value if export was successful
-          end
+        when :incremental
+          on_failure_state_trans(metadata, "failed") # Set state trans on failure
+          on_export_success(metadata)
+          incremental_export metadata
         end
         
-      end
+      end # metadata
     end
     
     ##
@@ -58,21 +43,7 @@ module Myreplicator
       ssh = @export_obj.ssh_to_source
       metadata.ssh = ssh
     end
-    
-    ##
-    # Throws ExportIgnored if the job is still running
-    # Checks the state of the job using PID and state
-    ##
-    def is_running?
-      return false if @export_obj.state != "exporting"
-      begin
-        Process.getpgid(@export_obj.exporter_pid)
-        raise Exceptions::ExportIgnored.new("Ignored")
-      rescue Errno::ESRCH
-        return false
-      end
-    end
-
+      
     def update_export *args
       options = args.extract_options!
       @export_obj.update_attributes! options
@@ -91,21 +62,29 @@ module Myreplicator
     ##
 
     def initial_export metadata
+      metadata.export_type = "initial"
+      max_value = @export_obj.max_value if @export_obj.incremental_export?
+      cmd = initial_mysqldump_cmd
+
+      exporting_state_trans # mark exporting
+
+      puts "Exporting..."
+      result = execute_export(cmd, metadata)
+      
+      check_result(result, 0)
+
+      @export_obj.update_max_val(max_value) if @export_obj.incremental_export?
+    end
+
+    def initial_mysqldump_cmd
       flags = ["create-options", "single-transaction"]       
       cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
                                   :flags => flags,
                                   :filepath => filepath,
                                   :table_name => @export_obj.table_name)     
-      
-      metadata.export_type = "initial"
-
-      update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
-
-      puts "Exporting..."
-      result = execute_export(cmd, metadata)
-      check_result(result, 0)
+      return cmd
     end
-
+    
     ##
     # Exports table incrementally, using the incremental column specified
     # If column is not specified, it will export the entire table 
@@ -113,28 +92,34 @@ module Myreplicator
     ##
 
     def incremental_export metadata
-      max_value = @export_obj.max_value
-      @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
+      unless @export_obj.is_running?
+        max_value = @export_obj.max_value
+        metadata.export_type = "incremental"
+        @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
+        
+        cmd = incremental_export_cmd 
+        exporting_state_trans # mark exporting
+        puts "Exporting..."
+        result = execute_export(cmd, metadata)
+        check_result(result, 0)
+        metadata.incremental_val = max_value # store max val in metadata
+        @export_obj.update_max_val(max_value) # update max value if export was successful
+      end
+      return false
+    end
 
+    def incremental_export_cmd
       sql = SqlCommands.export_sql(:db => @export_obj.source_schema,
                                    :table => @export_obj.table_name,
                                    :incremental_col => @export_obj.incremental_column,
                                    :incremental_col_type => @export_obj.incremental_column_type,
                                    :incremental_val => @export_obj.max_incremental_value)      
-
+      
       cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
                                      :filepath => filepath,
                                      :sql => sql)
-      
-      metadata.export_type = "incremental"
-      update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
-      puts "Exporting..."
-      result = execute_export(cmd, metadata)
-      check_result(result, 0)
-
-      return max_value
+      return cmd
     end
-
 
     ##
     # Exports table incrementally, similar to incremental_export method
@@ -145,6 +130,8 @@ module Myreplicator
 
     def incremental_export_into_outfile metadata
       max_value = @export_obj.max_value
+      metadata.export_type = "incremental_outfile"
+
       @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
 
       cmd = SqlCommands.mysql_export_outfile(:db => @export_obj.source_schema,
@@ -153,25 +140,12 @@ module Myreplicator
                                              :incremental_col => @export_obj.incremental_column,
                                              :incremental_col_type => @export_obj.incremental_column_type,
                                              :incremental_val => @export_obj.max_incremental_value)      
-
-      metadata.export_type = "incremental_outfile"
-      update_export(:state => "exporting", :export_started_at => Time.now, :exporter_pid => Process.pid)
+      exporting_state_trans
       puts "Exporting..."
       result = execute_export(cmd, metadata)
       check_result(result, 0)
-
+      max_value = incremental_export_into_outfile(metadata)
       return max_value
-    end
-
-    ##
-    # Completes an export process
-    # Zips files, updates states etc
-    ##
-    def wrapup metadata
-      puts "Zipping..."
-      zipfile(metadata)
-      update_export(:state => "export_completed", :export_finished_at => Time.now)
-      puts "Done.."
     end
 
     ##
@@ -203,7 +177,9 @@ module Myreplicator
     ##
     def zipfile metadata
       cmd = "cd #{Myreplicator.configs[@export_obj.source_schema]["ssh_tmp_dir"]}; gzip #{@export_obj.filename}"
-      
+
+      puts cmd
+
       zip_result = metadata.ssh.exec!(cmd)
 
       unless zip_result.nil?        
@@ -213,6 +189,30 @@ module Myreplicator
       metadata.zipped = true
 
       return zip_result
+    end
+
+    def on_failure_state_trans metadata, state
+      metadata.on_failure do |m|
+        update_export(:state => state, 
+                      :export_finished_at => Time.now, 
+                      :error => metadata.error)
+      end
+    end
+
+    def exporting_state_trans
+      update_export(:state => "exporting", 
+                    :export_started_at => Time.now, 
+                    :exporter_pid => Process.pid)
+    end
+
+    def on_export_success metadata
+      metadata.on_success do |m|
+        update_export(:state => "export_completed", 
+                      :export_finished_at => Time.now, 
+                      :error => metadata.error)
+        metadata.state = "export_completed"
+        zipfile(metadata)
+      end
     end
     
   end

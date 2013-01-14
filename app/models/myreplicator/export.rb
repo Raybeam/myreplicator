@@ -51,6 +51,14 @@ module Myreplicator
       end
     end
 
+    def export_type?
+      if state == "new"
+        return :new
+      elsif incremental_export?
+        return :incremental
+      end
+    end
+
     def incremental_export?
       if export_type == "incremental"
         return true
@@ -177,6 +185,20 @@ module Myreplicator
                             :queue => "myreplicator_export",
                             :args => id
                           })
+    end
+
+    ##
+    # Throws ExportIgnored if the job is still running
+    # Checks the state of the job using PID and state
+    ##
+    def is_running?
+      return false if state != "exporting"
+      begin
+        Process.getpgid(exporter_pid)
+        raise Exceptions::ExportIgnored.new("Ignored")
+      rescue Errno::ESRCH
+        return false
+      end
     end
 
     ##
