@@ -47,22 +47,18 @@ module Myreplicator
       @edit = true
 
       Myreplicator::Export.schedule_in_resque # schedule in resque
-
     end
   
     # POST /exports
     # POST /exports.json
     def create
       @export = Export.new(params[:export])
-
-      Myreplicator::Export.schedule_in_resque # schedule in resque
-
       @dbs = get_dbs
-
       respond_to do |format|
         if @export.save
           format.html { redirect_to @export, notice: 'Export was successfully created.' }
           format.json { render json: @export, status: :created, location: @export }
+          Myreplicator::Export.schedule_in_resque # schedule in resque
         else
           format.html { render action: "new" }
           format.json { render json: @export.errors, status: :unprocessable_entity }

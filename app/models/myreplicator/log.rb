@@ -68,7 +68,11 @@ module Myreplicator
     # Checks to see if the PID of the log is active or not
     ##
     def running?
-      logs = Log.where(:file => file, :job_type => job_type, :state => "running")
+      logs = Log.where(:file => file, 
+                       :job_type => job_type, 
+                       :state => "running",
+                       :export_id => export_id,
+                       :hostname => hostname)
   
       if logs.count > 0
         logs.each do |log|
