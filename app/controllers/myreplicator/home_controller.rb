@@ -21,6 +21,14 @@ module Myreplicator
       @exports = Export.where("error is not null").order('source_schema ASC')    
       @logs = Log.where(:state => 'error').order("started_at DESC") 
     end
+
+    def kill
+      @log = Log.find(params[:id])
+      # FOR SASAN:
+      # .kill doesn't seem to work...
+      @log.kill
+      redirect_to :action => 'index' 
+    end
     
   end
 end

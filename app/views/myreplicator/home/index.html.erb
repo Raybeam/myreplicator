@@ -12,6 +12,7 @@
     <td><%= log.job_type %></td>
     <td><%= log.started_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
     <td><%= chronos(@now.to_i - log.started_at.to_i) %></td>
+    <td><%= link_to 'kill job', kill_path(log), :class => 'kill'%></td>
   </tr>
   <% end %>
 </table>
@@ -30,6 +31,9 @@ jQuery(function(){
     toggles.removeClass("on");
     link.addClass("on");
     jQuery(link.attr('href')).fadeIn().siblings("li").hide();
+  })
+  $("a.kill").click(function(e){
+    if(confirm("Are you sure you wish to kill this running job?")!=true){e.preventDefault();}
   })
 })
 </script>

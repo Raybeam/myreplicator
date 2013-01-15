@@ -585,3 +585,17 @@ table.overview tr:nth-child(even) {background:#fbfbfb;}
 table.overview tr:last-child td {border-bottom:0px;}
 table.overview td span.name {color:#474747;display:block;font-weight:bold; font-size:13px;padding-bottom:5px;}
 table.overview td span.file {color:#999;display:block;font-style:italic;}
+a.kill {
+  color:#474747;
+  display:block;
+  float:right;
+  text-decoration:none;
+  text-shadow:0 1px #fff;
+}
+a.kill:before {
+  content: '`';
+  font-family: 'WebSymbolsRegular';
+  padding-right:3px;
+  font-size:14px;
+}
+a.kill:hover:before {color:#990000}
