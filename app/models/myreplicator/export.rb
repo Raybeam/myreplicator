@@ -76,7 +76,7 @@ module Myreplicator
                                       :table => self.table_name)
       result = exec_on_source(sql)
 
-      return result.first.first
+      return result.first.first.to_s(:db)
     end
 
     def update_max_val(max_val = nil)
