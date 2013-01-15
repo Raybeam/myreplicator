@@ -24,8 +24,6 @@ module Myreplicator
 
     def kill
       @log = Log.find(params[:id])
-      # FOR SASAN:
-      # .kill doesn't seem to work...
       @log.kill
       redirect_to :action => 'index' 
     end

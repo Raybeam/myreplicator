@@ -22,3 +22,5 @@ gem "sidekiq"
 gem "json"
 gem 'net-ssh'
 gem 'net-sftp'
+gem "resque"
+gem "resque-scheduler"

@@ -38,8 +38,8 @@ module Myreplicator
     # downloads export files concurrently from multiple sources
     ##
     def self.transfer
-      unique_jobs = Export.where("state != 'failed' and active = 1").group("source_schema")
-      
+      unique_jobs = Export.where("active = 1").group("source_schema")
+
       unique_jobs.each do |export|
         download export
       end
@@ -60,7 +60,7 @@ module Myreplicator
     ##
     def self.parallel_download export, ssh, files    
       p = Parallelizer.new(:klass => "Myreplicator::Transporter")
-      
+
       files.each do |filename|
         puts filename
         p.queue << {:params =>[ssh, export, filename], :block => download_file}
@@ -93,7 +93,7 @@ module Myreplicator
           sftp.download!(json_file, json_local_path)
           metadata = Transporter.metadata_obj(json_local_path)
           dump_file = metadata.export_path
-
+          puts metadata.state
           if metadata.state == "export_completed"
             Log.run(:job_type => "transporter", :name => "export_file",
                     :file => dump_file, :export_id => export.id) do |log|

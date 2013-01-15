@@ -21,6 +21,8 @@ Gem::Specification.new do |s|
   s.add_dependency "json"
   s.add_dependency "net-ssh"	
   s.add_dependency "net-sftp"
+  s.add_dependency "resque"
+  s.add_dependency "resque-scheduler"
   s.add_dependency "will_paginate", '~> 3.0'
 
   s.add_development_dependency "sqlite3"
