@@ -1,7 +1,7 @@
 myreplicator
 ============
 
-Rails engine that can replace mysql replication
+Rails engine that can replace mysql replication with flat-file based replication.
 
 --------------------------
 
@@ -60,3 +60,20 @@ Sample Yaml file
 
 Usage
 -----
+
+Once the engine is installed you need to setup Resque and Resque scheduler. Once all is setup, schedule the following jobs based on the required frequency.
+
+         Myreplicator::Export.schedule_in_resque
+
+    	 Resque.set_schedule("myreplicator_transporter", {
+                          :cron => "5 *	* * *",
+                          :class => "Myreplicator::Transporter",
+                          :queue => "myreplicator_transporter"
+                        })
+
+         Resque.set_schedule("myreplicator_loader", {
+                          :cron => "5 *	* * *",
+                          :class => "Myreplicator::Loader",
+                          :queue => "myreplicator_loader"
+                        })
+         end
