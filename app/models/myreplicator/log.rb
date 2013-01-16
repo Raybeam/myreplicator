@@ -59,8 +59,12 @@ module Myreplicator
     def kill
       begin
         Process.kill('TERM', pid)
+        self.state = "killed"
+        self.save!
       rescue Errno::ESRCH
         puts "pid #{pid} does not exist!"
+        self.state = "dead-pid"
+        self.save!
       end
     end
 

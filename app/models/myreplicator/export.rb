@@ -36,18 +36,20 @@ module Myreplicator
     ##
     def self.perform(export_id, *args)
       options = args.extract_options!
-      export_obj = Export.find(export_id)
-      export_obj.export_table
-    end
+      ActiveRecord::Base.verify_active_connections!
+       ActiveRecord::Base.connection.reconnect!
+       export_obj = Export.find(export_id)
+       export_obj.export
+     end
 
-    ##
-    # Runs the export process using the required Exporter library
-    ##
-    def export_table
-      Log.run(:job_type => "export", :name => schedule_name, 
+     ##
+     # Runs the export process using the required Exporter library
+     ##
+     def export
+       Log.run(:job_type => "export", :name => schedule_name, 
               :file => filename, :export_id => id) do |log|
         exporter = MysqlExporter.new
-        exporter.export_table self    
+        exporter.export_table self # pass current object to exporter
       end
     end
 
