@@ -31,32 +31,32 @@ Available configuartions for the engine:
 
 Sample Yaml file
 ---------------------------
-myreplicator:
-  tmp_path: # use this if you do not want to store files under tmp
-  mysqldump: mysqldump (command for mysqldump)
-  mysqlimport: mysqlimport # (command for mysqlimport)
-  mysql: mysql # (command for mysql)
-  outfile_location: /tmp/myreplicator # (for export to outfile)
-  escape_by: '"'
-  terminate_by: '\t'
-  enclosed_by: '"'
-  lines_terminate_by: '\n'
-  login_redirect: /
+	myreplicator:
+	  tmp_path: # use this if you do not want to store files under tmp
+	  mysqldump: mysqldump (command for mysqldump)
+	  mysqlimport: mysqlimport # (command for mysqlimport)
+	  mysql: mysql # (command for mysql)
+	  outfile_location: /tmp/myreplicator # (for export to outfile)
+	  escape_by: '"'
+	  terminate_by: '\t'
+	  enclosed_by: '"'
+	  lines_terminate_by: '\n'
+	  login_redirect: /
 
-# same as the name of database in database.yml
-remote_db_1:
-  ssh_host: localhost
-  ssh_user: guest
-  ssh_password: sasanguest
-  ssh_tmp_dir: /home/guest/tmp
+	  # same as the name of database in database.yml
+	  remote_db_1:
+	    ssh_host: localhost
+	    ssh_user: guest
+	    ssh_password: sasanguest
+	    ssh_tmp_dir: /home/guest/tmp
   
-# Sample connection using the private key
-remove_db_2:
-  ssh_host: 192.168.1.230
-  ssh_user: ubuntu
-  ssh_db_host: 127.0.0.1
-  ssh_private_key: ~/.ssh/team.pem
-  ssh_tmp_dir: /home/ubuntu/myreplicator_tmp
+	# Sample connection using the private key
+	 remove_db_2:
+	   ssh_host: 192.168.1.230
+ 	   ssh_user: ubuntu
+ 	   ssh_db_host: 127.0.0.1
+	   ssh_private_key: ~/.ssh/team.pem
+	   ssh_tmp_dir: /home/ubuntu/myreplicator_tmp
 
 Usage
 -----
