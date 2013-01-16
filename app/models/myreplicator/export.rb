@@ -37,9 +37,9 @@ module Myreplicator
     def self.perform(export_id, *args)
       options = args.extract_options!
       ActiveRecord::Base.verify_active_connections!
-       ActiveRecord::Base.connection.reconnect!
-       export_obj = Export.find(export_id)
-       export_obj.export
+      ActiveRecord::Base.connection.reconnect!
+      export_obj = Export.find(export_id)
+      export_obj.export
      end
 
      ##
