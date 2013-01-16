@@ -17,11 +17,17 @@ module Myreplicator
       end
 
       # Database host when ssh'ed into the db server
-      db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
+      db_host = "127.0.0.1" 
+
+      if !ssh_configs(db)["ssh_db_host"].blank? 
+        db_host =  ssh_configs(db)["ssh_db_host"]
+      elsif !db_configs(db)["host"].blank?
+        db_host += db_configs(db)["host"]
+      end
 
       cmd = Myreplicator.mysqldump
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
-      cmd += "-h#{db_host} " if db_configs(db)["host"]
+      cmd += "-h#{db_host} "
       cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
@@ -75,7 +81,14 @@ module Myreplicator
       options.reverse_merge! :flags => []
       db = options[:db]
       # Database host when ssh'ed into the db server
-      db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
+      
+      db_host = "127.0.0.1" 
+
+      if !ssh_configs(db)["ssh_db_host"].blank? 
+        db_host =  ssh_configs(db)["ssh_db_host"]
+      elsif !db_configs(db)["host"].blank?
+        db_host += db_configs(db)["host"]
+      end
 
       flags = ""
 
@@ -89,7 +102,8 @@ module Myreplicator
 
       cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
-      cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
+      cmd += "-h#{db_host} " 
+
       cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
       cmd += "--execute=\"#{options[:sql]}\" "
       cmd += " > #{options[:filepath]} "
