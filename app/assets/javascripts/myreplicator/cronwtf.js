@@ -127,10 +127,21 @@ var CronWTF = {
 
 var CronUI = {
   translate: function(){
-    var min = $("#min").val();
-    min_v = min == null ? '*' : this.process('#min',min) ;
-    var hr = $("#hour").val()
-    hr_v = hr == null ? '*' : this.process('#hour',hr) ;
+    if($("#cron-slider-trigger-min").attr("checked") != "checked"){
+      var min = $("#min").val();
+      min_v = min == null ? '*' : this.process('#min',min) ;
+    }else{
+      //grab from display as the lag between slider val assignment and the translation causes errors
+      var min = "*/"+$("#cron-n-min").text().replace(':',"")
+      min_v = min;
+    }
+    if($("#cron-slider-trigger-hr").attr("checked") != "checked"){
+      var hr = $("#hour").val()
+      hr_v = hr == null ? '*' : this.process('#hour',hr) ;
+    }else{
+      var hr = "*/"+$("#cron-n-hr").text().replace(':',"")
+      hr_v = hr;      
+    }
     var d = $("#day").val();
     d_v = d == null ? '*' : this.process('#day',d) ;
     var mon = $("#month").val();

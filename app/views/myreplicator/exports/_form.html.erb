@@ -48,39 +48,72 @@ export_type = ["incremental","fulldump"]
   <option value="false" <% if @export.active == false %>SELECTED<% end %>>false</option>
 </select>
 </div>
-<div class="form-section">
+<div class="form-section right">
 <%= f.hidden_field :cron %>
 <label>Cron</label>
-<span class="cron-label">minutes:</span><select id="min" class="cron" multiple data-placeholder="Minutes">
-  <option value="*">*</option>
-<% (0..59).each do |n| %>
-  <option value="<%=n %>"><%= n%></option>
-<% end %>
-</select><br/>
-<span class="cron-label">hours:</span><select id="hour" class="cron" multiple data-placeholder="Hours">
-  <option value="*">*</option>
-<% (0..23).each do |n| %>
-  <option value="<%=n %>"><%= n%></option>
-<% end %>
-</select><br/>
-<span class="cron-label">days:</span><select id="day" class="cron" multiple data-placeholder="Days">
-  <option value="*">*</option>
-<% (1..31).each do |n| %>
-  <option value="<%=n %>"><%= n%></option>
-<% end %>
-</select><br/>
-<span class="cron-label">months:</span><select id="month" class="cron" multiple data-placeholder="Months">
-  <option value="*">*</option>
-<% (1..12).each do |n| %>
-  <option value="<%= n - 1%>"><%= Date::MONTHNAMES[n]%></option>
-<% end %>
-</select><br/>
-<span class="cron-label">weekday:</span><select id="dow" class="cron" multiple data-placeholder="Day of the Week">
-  <option value="*">*</option>
-<% (0..6).each do |n| %>
-  <option value="<%=n %>"><%= Date::DAYNAMES[n]%></option>
-<% end %>
-</select>
+<div class="cron-option">
+  <span class="cron-label">minutes:</span>
+  <div class="cron-select">
+    <select id="min" class="cron" multiple data-placeholder="Minutes">
+      <option value="*">*</option>
+    <% (0..59).each do |n| %>
+      <option value="<%=n %>"><%= n%></option>
+    <% end %>
+    </select>
+  </div>
+  <label class="n"><input type="checkbox" data-slider="cron-min" data-chosen="min" id="cron-slider-trigger-min"/>every <em id="cron-n-min">n:</em></label>
+  <div class="cron-slider">
+    <div id="cron-min"></div>
+  </div>
+</div>
+<div class="cron-option">
+  <span class="cron-label">hours:</span>
+  <div class="cron-select">
+    <select id="hour" class="cron" multiple data-placeholder="Hours">
+      <option value="*">*</option>
+    <% (0..23).each do |n| %>
+      <option value="<%=n %>"><%= n%></option>
+    <% end %>
+    </select>
+  </div>
+  <label class="n"><input type="checkbox" data-slider="cron-hr" data-chosen="hour" id="cron-slider-trigger-hr"/>every <em id="cron-n-hr">n:</em></label>
+  <div class="cron-slider">
+    <div id="cron-hr"></div>
+  </div>
+</div>
+<div class="cron-option">
+  <span class="cron-label">days:</span>
+  <div class="cron-select">
+    <select id="day" class="cron" multiple data-placeholder="Days">
+      <option value="*">*</option>
+    <% (1..31).each do |n| %>
+      <option value="<%=n %>"><%= n%></option>
+    <% end %>
+    </select>
+  </div>
+</div>
+<div class="cron-option">
+  <span class="cron-label">months:</span>
+  <div class="cron-select">
+    <select id="month" class="cron" multiple data-placeholder="Months">
+      <option value="*">*</option>
+    <% (1..12).each do |n| %>
+      <option value="<%= n - 1%>"><%= Date::MONTHNAMES[n]%></option>
+    <% end %>
+    </select>
+  </div>
+</div>    
+<div class="cron-option">
+  <span class="cron-label">weekday:</span>
+  <div class="cron-select">
+    <select id="dow" class="cron" multiple data-placeholder="Day of the Week">
+      <option value="*">*</option>
+    <% (0..6).each do |n| %>
+      <option value="<%=n %>"><%= Date::DAYNAMES[n]%></option>
+    <% end %>
+    </select>
+  </div>
+</div>
 <label style="clear:left">Cron synatx</label>
 <div id="cron-val"></div>
 <label>Cron translation</label>
@@ -112,6 +145,38 @@ $(function(){
     exportSchemaSelect($(this).val())
   });
   exportSchemaSelect($("#export_source_schema").val());
+  $("#cron-min").slider({
+    min: 1, 
+    max: 59,
+    range: "min",
+    slide: function(event,ui){
+      $("#cron-n-min").text(ui.value+":")
+      CronUI.translate();
+    }
+  });
+  $("#cron-hr").slider({
+    min: 1, 
+    max: 23,
+    range: "min",
+    slide: function(event,ui){
+      $("#cron-n-hr").text(ui.value+":")
+      CronUI.translate();
+    }
+  });  
+  $("label.n").find("input").click(function(e){
+    var box = $(this)
+    var val = $("#"+box.data("slider")).slider("value");
+    if(box.attr("checked") == "checked"){
+      box.parent("label").prev("div").addClass("trans").addClass("hide").end().next("div").addClass("show").end().find("em").text(val+":");
+      $("#"+box.data("chosen")).val("").trigger("liszt:updated");
+    }else{
+      box.parent("label").prev("div").removeClass("hide").end().next("div").removeClass("show").end().find('em').text("n:");
+      var d = box.parent("label").prev("div")
+      window.setTimeout(function(){d.removeClass('trans')},500)
+    }
+    CronUI.translate();
+  })
+
 <%- if @edit -%>
   editInit();
 <%- end -%>
@@ -123,7 +188,34 @@ function editInit(){
   var cron_vals = cron.split(" ");
   for(i=0;i<cron_vals.length; i++){
     //console.log(displays[i]+" val: "+cron_vals[i])
-    $(displays[i]).val(cron_vals[i]).trigger("liszt:updated");
+    //console.log(cron_vals[i].indexOf(","))
+    if(i < 2){
+      if(cron_vals[i].toString().charAt(1) == '/'){
+        if(displays[i] == "#min"){
+          var val = cron_vals[i].toString().split('/')[1];
+          $("#cron-slider-trigger-min").attr("checked","checked").parent("label").prev("div").addClass("trans").addClass("hide").end().next("div").addClass("show").end().find("em").text(val+":");
+          $("#cron-min").slider("value",val)
+        }else{
+          var val = cron_vals[i].toString().split('/')[1];
+          $("#cron-slider-trigger-hr").attr("checked","checked").parent("label").prev("div").addClass("trans").addClass("hide").end().next("div").addClass("show").end().find("em").text(val+":");
+          $("#cron-hr").slider("value",val)
+        }
+      }else{
+        if(cron_vals[i].indexOf(",") != -1){
+          var vals = cron_vals[i].split(',')
+          $(displays[i]).val(vals).trigger("liszt:updated");
+        }else{
+          $(displays[i]).val(cron_vals[i]).trigger("liszt:updated");
+        }
+      }
+    }else{
+        if(cron_vals[i].indexOf(",") != -1){
+          var vals = cron_vals[i].split(',')
+          $(displays[i]).val(vals).trigger("liszt:updated");
+        }else{
+          $(displays[i]).val(cron_vals[i]).trigger("liszt:updated");
+        }
+    }
   }
   CronUI.translate();
   $("#export_table_name").val("<%= @export.table_name %>").trigger("liszt:updated");
