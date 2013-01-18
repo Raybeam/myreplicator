@@ -570,10 +570,7 @@ p.hint {color:#474747;font-size:12px;line-height:20px;margin:8px 5px;width:300px
   text-transform:capitalize;
 }
 
-table.overview {
-  width:100%;
-}
-
+table.overview { width:100%;}
 table.overview td {
   border-bottom:1px solid #eee;
   font-size:12px;
@@ -602,20 +599,30 @@ a.kill:hover:before {color:#990000}
 
 .cron-option {height:50px;}
 .cron-option span.cron-label {vertical-align:top;}
-.cron-option .cron-select {display:inline-block;margin-right:10px;   -webkit-transition: all 0.5s ease-in-out;
+.cron-option .cron-select {
+  display:inline-block;
+  margin-right:10px;   
+  -webkit-transition: all 0.5s ease-in-out;
   -moz-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
-  transition: all 0.5s ease-in-out;  width:270px;}
+  transition: all 0.5s ease-in-out;  
+  width:270px;
+}
 .cron-option .cron-select.trans {overflow:hidden;}
 .cron-option .cron-select.hide {margin:0px;width:0;}
-
 .cron-option label.n  { color:#777; display:inline-block; font-size:12px; font-weight:normal; vertical-align:top;}
 .cron-option label em {display:inline-block;min-width:18px;}
 .cron-option label input[type="checkbox"] {width:12px;margin-right:5px;}
-.cron-option .cron-slider {display:inline-block; overflow:hidden;-webkit-transition: all 0.5s ease-in-out;
+.cron-option .cron-slider {
+  display:inline-block; 
+  overflow:hidden;
+  -webkit-transition: all 0.5s ease-in-out;
   -moz-transition: all 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
-  transition: all 0.5s ease-in-out;vertical-align:top;width:0px;}
+  transition: all 0.5s ease-in-out;
+  vertical-align:top;
+  width:0px;
+}
 .cron-option .cron-slider.show {padding:5px 5px 5px 17px;width:250px;}
 .ui-slider { 
   border-radius:999px;
@@ -630,7 +637,6 @@ a.kill:hover:before {color:#990000}
   position: absolute; 
   z-index: 2; width: 17px; height: 17px; cursor: default; }
 .ui-slider .ui-slider-range { position: absolute; z-index: 1; height:15px; display: block; border: 0; }
-
 .ui-slider-horizontal { height: 13px; }
 .ui-slider-horizontal .ui-slider-handle { top: -2px;  margin-left:-8px; }
 .ui-slider-horizontal .ui-slider-range { 
@@ -648,4 +654,3 @@ a.kill:hover:before {color:#990000}
 }
 .ui-slider-horizontal .ui-slider-range-min { left: 0; }
 .ui-slider-horizontal .ui-slider-range-max { right: 0; }
-
