@@ -78,9 +78,12 @@ module Myreplicator
                   :name => "#{metadata.export_type}_import", 
                   :file => metadata.filename, 
                   :export_id => metadata.export_id) do |log|
-            
-            Loader.initial_load metadata
-            Loader.cleanup metadata
+
+            if Loader.transfer_completed? metadata
+              Loader.initial_load metadata
+              Loader.cleanup metadata
+            end
+
           end
         }
       end
@@ -103,9 +106,12 @@ module Myreplicator
                     :name => "incremental_import", 
                     :file => metadata.filename, 
                     :export_id => metadata.export_id) do |log|
-              
-              Loader.incremental_load metadata
-              Loader.cleanup metadata
+    
+              if Loader.transfer_completed? metadata
+                Loader.incremental_load metadata
+                Loader.cleanup metadata
+              end
+
             end
           end # group
         }
@@ -148,18 +154,17 @@ module Myreplicator
       exp = Export.find(metadata.export_id)
       Loader.unzip(metadata.filename)
       metadata.zipped = false
-
+      
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
                                    :filepath => metadata.destination_filepath(tmp_dir))      
       puts cmd
-
+      
       result = `#{cmd}` # execute
       unless result.nil?
         if result.size > 0
           raise Exceptions::LoaderError.new("Initial Load #{metadata.filename} Failed!\n#{result}") 
         end
       end
-      
     end
 
     ##
@@ -173,14 +178,14 @@ module Myreplicator
       
       options = {:table_name => exp.table_name, :db => exp.destination_schema,
         :filepath => metadata.destination_filepath(tmp_dir)}
-
+      
       if metadata.export_type == "incremental_outfile"
         options[:fields_terminated_by] = ";~;"
         options[:lines_terminated_by] = "\\n"
       end
-
+      
       cmd = ImportSql.load_data_infile(options)
-
+      
       puts cmd
       
       result = `#{cmd}` # execute
@@ -190,6 +195,19 @@ module Myreplicator
           raise Exceptions::LoaderError.new("Incremental Load #{metadata.filename} Failed!\n#{result}") 
         end
       end
+    end
+
+    ##
+    # Returns true if the transfer of the file
+    # being loaded is completed
+    ##
+    def self.transfer_completed? metadata
+      if Log.completed?(:export_id => metadata.export_id,
+                        :file => metadata.destination_filepath(tmp_dir),
+                        :job_type => "transporter")
+        return true
+      end
+      return false
     end
 
     ##

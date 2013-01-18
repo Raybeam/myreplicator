@@ -110,7 +110,25 @@ module Myreplicator
       end
       
     end
-    
+
+    ##
+    # Gets a jobtype, file and export_id
+    # returns true if the job is completed
+    ##
+    def self.completed? *args
+      options = args.extract_options!
+      log = Log.where(:export_id => options[:export_id],
+                      :file => options[:export_id],
+                      :job_type => options[:job_type]).last
+      if log.nil?
+        return true
+      else
+        return true if log.state != "running"
+      end
+      
+      return false
+    end
+
     def mark_dead
       self.state = "dead"
       self.save!

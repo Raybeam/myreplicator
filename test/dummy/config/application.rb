@@ -4,6 +4,10 @@ require 'rails/all'
 
 Bundler.require
 require "myreplicator"
+require "resque"
+require 'resque/scheduler' 
+require 'resque_scheduler'
+require 'resque_scheduler/server'
 
 module Dummy
   class Application < Rails::Application
