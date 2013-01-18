@@ -17,8 +17,11 @@ module Myreplicator
 
     ##
     # Main method provided for resque
+    # Reconnection provided for resque workers
     ##
     def self.perform
+      ActiveRecord::Base.verify_active_connections!
+      ActiveRecord::Base.connection.reconnect!
       transfer # Kick off the load process
     end
 

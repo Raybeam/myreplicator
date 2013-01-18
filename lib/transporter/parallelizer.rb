@@ -29,17 +29,16 @@ module Myreplicator
     def run
       @done = false
       @manager_running = false
+      reaper = nil
 
       while @queue.size > 0
         if @threads.size <= @max_threads
           @threads << Thread.new(@queue.pop) do |proc|
-            Thread.current[:status] = 'running' # Manually Set Thread state for Checks
             @klass.new.instance_exec(proc[:params], &proc[:block])
-            Thread.current[:status] = 'done' 
           end
         else
           unless @manager_running
-            manage_threads 
+            reaper = manage_threads 
             @manager_running = true
           end
           sleep 1
@@ -47,14 +46,11 @@ module Myreplicator
       end   
       
       # Run manager if thread size never reached max
-      manage_threads unless @manager_running
+      reaper = manage_threads unless @manager_running
 
       # Waits until all threads are completed
       # Before exiting
-      while !done?
-        sleep 1
-      end
-
+      reaper.join
     end
     
     ##
@@ -67,9 +63,8 @@ module Myreplicator
         while(@threads.size > 0)
           done = []
           @threads.each do |t|
-            done << t if t[:status] == "done"
+            done << t if t.stop?
           end
-
           done.each{|d| @threads.delete(d)} # Clear dead threads
           
           # If no more jobs are left, mark done

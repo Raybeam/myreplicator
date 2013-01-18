@@ -57,14 +57,14 @@ module Myreplicator
     # Using PID
     ##
     def kill
+      return false unless hostname == Socket.gethostname
       begin
         Process.kill('TERM', pid)
         self.state = "killed"
         self.save!
       rescue Errno::ESRCH
         puts "pid #{pid} does not exist!"
-        self.state = "dead-pid"
-        self.save!
+        mark_dead
       end
     end
 
@@ -85,13 +85,35 @@ module Myreplicator
             puts "still running #{filepath}"
             return true
           rescue Errno::ESRCH
-            log.state = "error"
-            log.save!
+            log.mark_dead
           end
         end
       end
       
       return false
+    end
+
+    ##
+    # Clear all logs marked running that are not running
+    ##
+    def self.clear_deads
+      logs = Log.where(:state => "running")
+  
+      if logs.count > 0
+        logs.each do |log|
+          begin
+            Process.getpgid(log.pid) if hostname == Socket.gethostname
+          rescue Errno::ESRCH
+            log.mark_dead
+          end
+        end
+      end
+      
+    end
+    
+    def mark_dead
+      self.state = "dead"
+      self.save!
     end
 
   end
