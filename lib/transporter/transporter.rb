@@ -20,8 +20,6 @@ module Myreplicator
     # Reconnection provided for resque workers
     ##
     def self.perform
-      ActiveRecord::Base.verify_active_connections!
-      ActiveRecord::Base.connection.reconnect!
       transfer # Kick off the load process
     end
 
@@ -85,6 +83,9 @@ module Myreplicator
         ssh = params[0]
         export = params[1] 
         filename = params[2]
+
+        ActiveRecord::Base.verify_active_connections!
+        ActiveRecord::Base.connection.reconnect!
 
         Log.run(:job_type => "transporter", :name => "metadata_file", 
                 :file => filename, :export_id => export.id) do |log|
