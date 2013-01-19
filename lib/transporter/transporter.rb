@@ -65,9 +65,11 @@ module Myreplicator
       files.each do |filename|
         puts filename
         p.queue << {:params =>[ssh, export, filename], :block => download_file}
+        proc = p.pop
+        Transporter.new.instance_exec(proc[:params], &proc[:block])
       end
 
-      p.run 
+      # p.run 
     end
 
     ##
@@ -108,7 +110,7 @@ module Myreplicator
           elsif Transporter.junk_file?(metadata)
             Transporter.remove!(ssh, json_file, dump_file)
           end #if
-
+          puts "Exiting download..."
         end
       }
     end
@@ -127,8 +129,8 @@ module Myreplicator
     end
 
     def self.remove! ssh, json_file, dump_file
-      ssh.exec!("rm #{json_file}")
-      ssh.exec!("rm #{dump_file}")           
+      puts "rm #{json_file} #{dump_file}"
+      ssh.exec!("rm #{json_file} #{dump_file}")
     end
 
     ##
