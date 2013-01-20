@@ -34,7 +34,9 @@ module Myreplicator
       while @queue.size > 0
         if @threads.size <= @max_threads
           @threads << Thread.new(@queue.pop) do |proc|
+            Thread.current[:thread_state] = "running"
             @klass.new.instance_exec(proc[:params], &proc[:block])
+            Thread.current[:thread_state] = "done"
           end
         else
           unless @manager_running
@@ -63,7 +65,8 @@ module Myreplicator
         while(@threads.size > 0)
           done = []
           @threads.each do |t|
-            done << t if t.stop?
+            done << t if t[:thread_state] == "done"
+            raise "Nil Thread State" if t[:thread_state].nil?
           end
           done.each{|d| @threads.delete(d)} # Clear dead threads
           
@@ -72,6 +75,7 @@ module Myreplicator
           if done?
             @done = true
           else
+            puts "Sleeping for 2"
             sleep 2 # Wait for more threads to spawn
           end
 

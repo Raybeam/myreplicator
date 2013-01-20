@@ -51,25 +51,22 @@ module Myreplicator
     # Kicks off parallel download
     ##
     def self.download export
-      ssh = export.ssh_to_source     
-      parallel_download(export, ssh, completed_files(ssh, export))
+      parallel_download(export, completed_files(export))
     end
 
     ##
     # Gathers all files that need to be downloaded
     # Gives the queue to parallelizer library to download in parallel
     ##
-    def self.parallel_download export, ssh, files    
+    def self.parallel_download export, files    
       p = Parallelizer.new(:klass => "Myreplicator::Transporter")
 
       files.each do |filename|
         puts filename
-        p.queue << {:params =>[ssh, export, filename], :block => download_file}
-        proc = p.pop
-        Transporter.new.instance_exec(proc[:params], &proc[:block])
+        p.queue << {:params =>[export, filename], :block => download_file}
       end
 
-      # p.run 
+      p.run 
     end
 
     ##
@@ -82,15 +79,15 @@ module Myreplicator
     ##
     def self.download_file    
       proc = Proc.new { |params|
-        ssh = params[0]
-        export = params[1] 
-        filename = params[2]
+        export = params[0] 
+        filename = params[1]
 
         ActiveRecord::Base.verify_active_connections!
         ActiveRecord::Base.connection.reconnect!
 
         Log.run(:job_type => "transporter", :name => "metadata_file", 
-                :file => filename, :export_id => export.id) do |log|
+                :thread_state => Thread.current.to_s,
+                :file => filename, :export_id => export.id ) do |log|
 
           sftp = export.sftp_to_source
           json_file = Transporter.remote_path(export, filename) 
@@ -102,15 +99,14 @@ module Myreplicator
           puts metadata.state
           if metadata.state == "export_completed"
             Log.run(:job_type => "transporter", :name => "export_file",
+                    :thread_state => Thread.current.to_s,
                     :file => dump_file, :export_id => export.id) do |log|
               puts "Downloading #{dump_file}"
               sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
-              Transporter.remove!(ssh, json_file, dump_file)
+              Transporter.remove!(export, json_file, dump_file)
             end
-          elsif Transporter.junk_file?(metadata)
-            Transporter.remove!(ssh, json_file, dump_file)
           end #if
-          puts "Exiting download..."
+          puts "#{Thread.current.to_s}___Exiting download..."
         end
       }
     end
@@ -128,7 +124,8 @@ module Myreplicator
       return false
     end
 
-    def self.remove! ssh, json_file, dump_file
+    def self.remove! export, json_file, dump_file
+      ssh = export.ssh_to_source
       puts "rm #{json_file} #{dump_file}"
       ssh.exec!("rm #{json_file} #{dump_file}")
     end
@@ -136,7 +133,8 @@ module Myreplicator
     ##
     # Gets all files ready to be exported from server
     ##
-    def self.completed_files ssh, export
+    def self.completed_files export
+      ssh = export.ssh_to_source
       done_files = ssh.exec!(get_done_files(export))
 
       unless done_files.blank?
