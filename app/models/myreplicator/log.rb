@@ -25,7 +25,7 @@ module Myreplicator
                              :pid => Process.pid,
                              :hostname => Socket.gethostname,
                              :guid => SecureRandom.hex(5),
-                             :thread_state => Thread.current.status,
+                             :thread_state => Thread.current.to_s,
                              :state => "new")
 
       log = Log.create options
@@ -45,7 +45,6 @@ module Myreplicator
 
         ensure
           log.finished_at = Time.now
-          log.thread_state = Thread.current.status
           log.save!
         end
       end

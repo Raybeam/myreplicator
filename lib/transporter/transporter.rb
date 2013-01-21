@@ -86,7 +86,6 @@ module Myreplicator
         ActiveRecord::Base.connection.reconnect!
 
         Log.run(:job_type => "transporter", :name => "metadata_file", 
-                :thread_state => Thread.current.to_s,
                 :file => filename, :export_id => export.id ) do |log|
 
           sftp = export.sftp_to_source
@@ -99,7 +98,6 @@ module Myreplicator
           puts metadata.state
           if metadata.state == "export_completed"
             Log.run(:job_type => "transporter", :name => "export_file",
-                    :thread_state => Thread.current.to_s,
                     :file => dump_file, :export_id => export.id) do |log|
               puts "Downloading #{dump_file}"
               sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))

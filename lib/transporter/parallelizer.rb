@@ -37,7 +37,7 @@ module Myreplicator
             Thread.current[:thread_state] = "running"
             @klass.new.instance_exec(proc[:params], &proc[:block])
             Thread.current[:thread_state] = "done"
-          end
+          end       
         else
           unless @manager_running
             reaper = manage_threads 
@@ -65,8 +65,9 @@ module Myreplicator
         while(@threads.size > 0)
           done = []
           @threads.each do |t|
-            done << t if t[:thread_state] == "done"
-            raise "Nil Thread State" if t[:thread_state].nil?
+            done << t if t[:thread_state] == "done" || !t.status
+            # puts t.object_id.to_s + "--" + t.status.to_s + "--" + t.to_s
+            # raise "Nil Thread State" if t[:thread_state].nil?
           end
           done.each{|d| @threads.delete(d)} # Clear dead threads
           
