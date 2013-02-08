@@ -1,6 +1,6 @@
 <% 
 #rather than yaml arrays of the drop downs
-export_to = ["destination_db","s3","both"]
+export_to = ["destination_db","backup","both"]
 export_type = ["incremental","fulldump"]
 %>
 <%= form_for(@export) do |f| %>
@@ -28,7 +28,7 @@ export_type = ["incremental","fulldump"]
 <%= f.text_field :incremental_column_type %>
 <label>Maximum Incremental Value</label>
 <%= f.text_field :max_incremental_value %>
-<label>S3 Path</label>
+<label>Store a copy in</label>
 <%= f.text_field :s3_path %>
 <label>Export to</label>
 <select name="export[export_to]" id="export_to" class="chosen" data-placeholder="Select export destination">

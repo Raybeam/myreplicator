@@ -13,6 +13,7 @@ module Myreplicator
                   :incremental_val,
                   :ssh,
                   :export_type,
+                  :backup_path,
                   :on_duplicate,
                   :filepath,
                   :zipped,
@@ -203,6 +204,7 @@ module Myreplicator
       @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
       @export_type = options[:export_type] if options[:export_type]
       @zipped = options[:zipped].nil? ? false : options[:zipped]
+      @backup_path = options[:backup_path] if options[:backup_path]
       @ssh = nil
 
       @success_callbacks = []

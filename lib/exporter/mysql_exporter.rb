@@ -17,6 +17,7 @@ module Myreplicator
                             :database => @export_obj.source_schema,
                             :export_id => @export_obj.id,
                             :filepath => filepath,
+                            :backup_path => @export_obj.s3_path,
                             :incremental_col => @export_obj.incremental_column) do |metadata|
 
         prepare metadata
