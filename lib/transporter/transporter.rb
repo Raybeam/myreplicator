@@ -100,13 +100,23 @@ module Myreplicator
             Log.run(:job_type => "transporter", :name => "export_file",
                     :file => dump_file, :export_id => export.id) do |log|
               puts "Downloading #{dump_file}"
-              sftp.download!(dump_file, File.join(tmp_dir, dump_file.split("/").last))
+              local_dump_file = File.join(tmp_dir, dump_file.split("/").last)
+              sftp.download!(dump_file, local_dump_file)
               Transporter.remove!(export, json_file, dump_file)
+              # store back up as well
+              unless metadata.backup_path.blank?
+                Transporter.backup_files(metadata.backup_path, json_local_path, local_dump_file)
+              end
             end
           end #if
           puts "#{Thread.current.to_s}___Exiting download..."
         end
       }
+    end
+
+    def self.backup_files location, metadata_path, dump_path
+      FileUtils.cp(metadata_path, location)
+      FileUtils.cp(dump_path, location)
     end
 
     ##
