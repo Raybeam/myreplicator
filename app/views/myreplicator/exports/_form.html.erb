@@ -124,8 +124,7 @@ export_type = ["incremental","fulldump"]
     <%= link_to content_tag(:span, 'cancel'), exports_path, :class => "btn left action cancel" %>
   </div>
 <% end %>
-<%= javascript_include_tag "myreplicator/select2" %>
-<%= javascript_include_tag "myreplicator/cronwtf.min" %>
+
 <script>
 var dbs = {
 <% @tables.each do |key,values| %>
@@ -153,16 +152,10 @@ $(function(){
     var exp = $(this).val();
     if(exp == 'vertica'){
       $("#export_destination_schema").select2("destroy").before('<input type="text" id="export_destination_schema" name="export[destination_schema]"/>').remove();
-      $("#export_table_name").select2("destroy").before('<input type="text" id="export_table_name" name="export[table_name]"/>').remove();
     }else{
       if($("#s2id_export_destination_schema").length < 1){
         $("#export_destination_schema").before($destination).remove();
         $("#export_destination_schema").select2();
-      }
-      if($("#s2id_export_table_name").length < 1){
-        $("#export_table_name").before($table_name).remove();
-        $("#export_table_name").select2();
-        exportSchemaSelect($("#export_source_schema").val()) 
       }
     }
   })
@@ -243,7 +236,6 @@ function editInit(){
   $("#export_table_name").select2("val","<%= @export.table_name %>")
   <% else %>
     $("#export_destination_schema").select2("destroy").before('<input type="text" id="export_destination_schema" name="export[destination_schema]" value="<%= @export.destination_schema %>"/>').remove();
-    $("#export_table_name").select2("destroy").before('<input type="text" id="export_table_name" name="export[table_name]" value="<%= @export.table_name %>" />').remove();
   <% end %>
 }
 
