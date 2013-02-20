@@ -1,6 +1,6 @@
 <% 
 #rather than yaml arrays of the drop downs
-export_to = ["destination_db","backup","both"]
+export_to = ["destination_db","backup","vertica"]
 export_type = ["incremental","fulldump"]
 %>
 <%= form_for(@export) do |f| %>
@@ -16,6 +16,18 @@ export_type = ["incremental","fulldump"]
     </div>
   <% end %>
   <div class="form-section">
+<label>Export to</label>
+<select name="export[export_to]" id="export_to" class="chosen" data-placeholder="Select export destination">
+  <% export_to.each do |val| %>
+  <option value="<%= val %>" <% if @export.export_to == val %>SELECTED<% end %>><%= val %></option>
+  <% end %> 
+</select>
+<label>Export type</label>
+<select name="export[export_type]" id="export_type" class="chosen" data-placeholder="Select your export type">
+  <% export_type.each do |val| %>
+  <option value="<%= val %>" <% if @export.export_type == val %>SELECTED<% end %>><%= val %></option>
+  <% end %>
+</select>    
 <label>Source Schema</label>
 <%= f.select :source_schema, @dbs %>
 <label>Destination Schema</label>
@@ -30,18 +42,6 @@ export_type = ["incremental","fulldump"]
 <%= f.text_field :max_incremental_value %>
 <label>Store a copy in</label>
 <%= f.text_field :s3_path %>
-<label>Export to</label>
-<select name="export[export_to]" id="export_to" class="chosen" data-placeholder="Select export destination">
-  <% export_to.each do |val| %>
-  <option value="<%= val %>" <% if @export.export_to == val %>SELECTED<% end %>><%= val %></option>
-  <% end %> 
-</select>
-<label>Export type</label>
-<select name="export[export_type]" id="export_type" class="chosen" data-placeholder="Select your export type">
-  <% export_type.each do |val| %>
-  <option value="<%= val %>" <% if @export.export_type == val %>SELECTED<% end %>><%= val %></option>
-  <% end %>
-</select>
 <label>Active</label>
 <select name="export[active]" id="active" class="chosen">
   <option value="true" <% if @export.active == true %>SELECTED<% end %>>true</option>
@@ -124,8 +124,7 @@ export_type = ["incremental","fulldump"]
     <%= link_to content_tag(:span, 'cancel'), exports_path, :class => "btn left action cancel" %>
   </div>
 <% end %>
-<%= javascript_include_tag "myreplicator/chosen.jquery.min" %>
-<%= javascript_include_tag "myreplicator/cronwtf.min" %>
+
 <script>
 var dbs = {
 <% @tables.each do |key,values| %>
@@ -138,13 +137,28 @@ var dbs = {
 }
 $(function(){
   CronUI.translate();
-  $(".chosen").chosen();
-  $("#export_destination_schema,#export_table_name").chosen();
+  $(".chosen").select2();
+  var $destination = $("#export_destination_schema").clone();
+  var $table_name = $("#export_table_name").clone()
+  $("#export_destination_schema").select2();
+  $("#export_table_name").select2();
   $(".cron").chosen().change(function(){CronUI.translate()});
-  $("#export_source_schema").chosen().change(function(){
+  $("#export_source_schema").select2().change(function(){
     exportSchemaSelect($(this).val())
   });
   exportSchemaSelect($("#export_source_schema").val());
+
+  $("#export_to").change(function(){
+    var exp = $(this).val();
+    if(exp == 'vertica'){
+      $("#export_destination_schema").select2("destroy").before('<input type="text" id="export_destination_schema" name="export[destination_schema]"/>').remove();
+    }else{
+      if($("#s2id_export_destination_schema").length < 1){
+        $("#export_destination_schema").before($destination).remove();
+        $("#export_destination_schema").select2();
+      }
+    }
+  })
   $("#cron-min").slider({
     min: 1, 
     max: 59,
@@ -218,18 +232,25 @@ function editInit(){
     }
   }
   CronUI.translate();
-  $("#export_table_name").val("<%= @export.table_name %>").trigger("liszt:updated");
+  <% if @export.export_to != 'vertica' %>
+  $("#export_table_name").select2("val","<%= @export.table_name %>")
+  <% else %>
+    $("#export_destination_schema").select2("destroy").before('<input type="text" id="export_destination_schema" name="export[destination_schema]" value="<%= @export.destination_schema %>"/>').remove();
+  <% end %>
 }
 
 function exportSchemaSelect(val){
     var target = $("#export_table_name");
-    var tables = dbs[val];
-    var l = tables.length;
-    var options = "";
-    for(i=0;i<l;i++){
-      options += "<option value='"+tables[i]+"'>"+tables[i]+"</option>";
+    if(target.hasClass("select2-offscreen")){
+      target.select2("destroy")
+      var tables = dbs[val];
+      var l = tables.length;
+      var options = "";
+      for(i=0;i<l;i++){
+        options += "<option value='"+tables[i]+"'>"+tables[i]+"</option>";
+      }
+      target.val('').find("option").remove()
+      target.append(options).select2();
     }
-    target.val('').find("option").remove().trigger("liszt:updated");
-    target.append(options).trigger("liszt:updated");
 }
 </script>

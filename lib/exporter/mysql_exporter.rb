@@ -15,9 +15,10 @@ module Myreplicator
 
       ExportMetadata.record(:table => @export_obj.table_name,
                             :database => @export_obj.source_schema,
+                            :export_to => @export_obj.export_to,
                             :export_id => @export_obj.id,
                             :filepath => filepath,
-                            :backup_path => @export_obj.s3_path,
+                            :store_in => @export_obj.s3_path,
                             :incremental_col => @export_obj.incremental_column) do |metadata|
 
         prepare metadata
@@ -79,10 +80,19 @@ module Myreplicator
 
     def initial_mysqldump_cmd
       flags = ["create-options", "single-transaction"]       
-      cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
-                                  :flags => flags,
-                                  :filepath => filepath,
-                                  :table_name => @export_obj.table_name)     
+      cmd = ""
+      # Mysql - Mysql Export
+      if @export_obj.export_to == "destination_db"
+        cmd = SqlCommands.mysqldump(:db => @export_obj.source_schema,
+                                    :flags => flags,
+                                    :filepath => filepath,
+                                    :table_name => @export_obj.table_name)     
+      else # Other destinations
+        cmd = SqlCommands.mysql_export_outfile(:db => @export_obj.source_schema,
+                                               :filepath => filepath,
+                                               :table => @export_obj.table_name)
+      end
+
       return cmd
     end
     

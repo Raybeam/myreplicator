@@ -5,6 +5,7 @@ module Myreplicator
 
     attr_accessor(:export_time, 
                   :export_finished_at, 
+                  :export_to,
                   :table, 
                   :database, 
                   :state, 
@@ -13,7 +14,7 @@ module Myreplicator
                   :incremental_val,
                   :ssh,
                   :export_type,
-                  :backup_path,
+                  :store_in,
                   :on_duplicate,
                   :filepath,
                   :zipped,
@@ -159,7 +160,9 @@ module Myreplicator
         :export_id => @export_id,
         :filepath => @filepath,
         :zipped => @zipped,
-        :export_type => @export_type
+        :export_type => @export_type,
+        :export_to => @export_to,
+        :store_in => @store_in
       }
       return obj.to_json
     end
@@ -204,7 +207,8 @@ module Myreplicator
       @on_duplicate = options[:on_duplicate] if options[:on_duplicate]
       @export_type = options[:export_type] if options[:export_type]
       @zipped = options[:zipped].nil? ? false : options[:zipped]
-      @backup_path = options[:backup_path] if options[:backup_path]
+      @store_in = options[:store_in] if options[:store_in]
+      @export_to = options[:export_to] if options[:export_to]
       @ssh = nil
 
       @success_callbacks = []

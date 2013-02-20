@@ -159,8 +159,6 @@ module Myreplicator
         end
       end
     
-      # BOB : You always build the host,password,username part of the command
-      # Seems like this should be in a function somewhere 
       cmd = Myreplicator.mysql
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
       cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
