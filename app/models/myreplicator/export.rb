@@ -44,13 +44,39 @@ module Myreplicator
 
      ##
      # Runs the export process using the required Exporter library
-     ##
-     def export
-       Log.run(:job_type => "export", :name => schedule_name, 
+    ##
+    def export
+      Log.run(:job_type => "export", :name => schedule_name, 
               :file => filename, :export_id => id) do |log|
         exporter = MysqlExporter.new
         exporter.export_table self # pass current object to exporter
       end
+    end
+    
+    def schema_changed?
+      exec_on_source()
+    end
+
+    def source_mysql_schema
+      sql = "describe table #{source_schema}"
+      result = exec_on_source(sql)
+      Kernel.p result
+    end
+
+    def destination_schema_vertica
+      # #{destination_schema}
+      sql = "\\d king.address"
+      puts sql
+      # result = exec_on_source(sql)
+      SourceDb.connect("vertica")
+      SourceDb.set_table_name = "king.address"
+      Kernel.p SourceDb.column_names
+      # result = SourceDb.exec_sql("vertica", sql)
+      Kernel.p result     
+    end
+
+    def destination_schema_mysql
+      
     end
 
     def export_type?
@@ -209,7 +235,7 @@ module Myreplicator
     ##
 
     class SourceDb < ActiveRecord::Base
-      
+
       def self.connect db
         establish_connection(ActiveRecord::Base.configurations[db])
       end
