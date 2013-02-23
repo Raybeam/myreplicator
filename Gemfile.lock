@@ -156,8 +156,8 @@ GEM
     vertica (0.9.4)
       jeweler
       rake
-    vertica_rails_adapter (1.0.0)
-      rails (>= 3.0.0)
+    vertica_rails_adapter (2.0.0)
+      rails (>= 3.2.0)
       vertica
     will_paginate (3.0.3)
 
@@ -176,5 +176,5 @@ DEPENDENCIES
   sidekiq
   sqlite3
   vertica
-  vertica_rails_adapter
+  vertica_rails_adapter (~> 2.0.0)
   will_paginate (~> 3.0)

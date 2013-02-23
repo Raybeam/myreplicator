@@ -25,4 +25,4 @@ gem 'net-sftp'
 gem "resque"
 gem "resque-scheduler"
 gem "vertica"
-gem 'vertica_rails_adapter'
+gem "vertica_rails_adapter", "~> 2.0.0"
