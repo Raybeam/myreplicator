@@ -163,7 +163,8 @@ module Myreplicator
         :zipped => @zipped,
         :export_type => @export_type,
         :export_to => @export_to,
-        :store_in => @store_in
+        :store_in => @store_in,
+        :new_schema => @new_schema
       }
       return obj.to_json
     end

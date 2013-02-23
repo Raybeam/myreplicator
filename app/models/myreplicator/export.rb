@@ -64,15 +64,10 @@ module Myreplicator
     end
 
     def destination_schema_vertica
-      # #{destination_schema}
-      sql = "\\d king.address"
+      sql = "select column_name, data_type From columns where table_name = '#{table_name}' AND table_schema = '#{destination_schema}'"
       puts sql
-      # result = exec_on_source(sql)
-      SourceDb.connect("vertica")
-      SourceDb.set_table_name = "king.address"
-      Kernel.p SourceDb.column_names
-      # result = SourceDb.exec_sql("vertica", sql)
-      Kernel.p result     
+      result = SourceDb.exec_sql("vertica",sql)
+      return result     
     end
 
     def destination_schema_mysql
