@@ -58,9 +58,9 @@ module Myreplicator
     end
 
     def source_mysql_schema
-      sql = "describe table #{source_schema}"
+      sql = "describe #{source_schema}.#{table_name}"
       result = exec_on_source(sql)
-      Kernel.p result
+      return result
     end
 
     def destination_schema_vertica
