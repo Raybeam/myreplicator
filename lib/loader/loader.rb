@@ -177,24 +177,27 @@ module Myreplicator
       metadata.zipped = false
       
       options = {:table_name => exp.table_name, :db => exp.destination_schema,
-        :filepath => metadata.destination_filepath(tmp_dir)}
+        :filepath => metadata.destination_filepath(tmp_dir), :source_schema => exp.source_schema}
       
       if metadata.export_type == "incremental_outfile"
-        options[:fields_terminated_by] = ";~;"
+        options[:fields_terminated_by] = "\\0"
         options[:lines_terminated_by] = "\\n"
       end
       
-      cmd = ImportSql.load_data_infile(options)
-      
-      puts cmd
-      
-      result = `#{cmd}` # execute
-      
-      unless result.nil?
-        if result.size > 0
-          raise Exceptions::LoaderError.new("Incremental Load #{metadata.filename} Failed!\n#{result}") 
+      case metadata.export_to 
+      when "vertica"
+        options[:destination_schema] = exp.destination_schema
+        Myreplicator::VerticaLoader.load options
+      when "mysql"
+        cmd = ImportSql.load_data_infile(options)
+        puts cmd
+        result = `#{cmd}` # execute
+        unless result.nil?
+          if result.size > 0
+            raise Exceptions::LoaderError.new("Incremental Load #{metadata.filename} Failed!\n#{result}") 
+          end
         end
-      end
+      end #case  
     end
 
     ##
@@ -250,6 +253,18 @@ module Myreplicator
         files << ExportMetadata.new(:metadata_path => json_file)
       end
       return files
+    end
+
+    def self.mysql_table_definition options
+      sql = "SELECT table_schema, table_name, column_name, is_nullable, data_type, column_type, column_key "
+      sql += "FROM INFORMATION_SCHEMA.COLUMNS where table_name = '#{options[:table]}' "
+      sql += "and table_schema = '#{options[:source_schema]}';"
+      
+      puts sql
+      
+      desc = DB.exec_sql(options[:source_schema], sql)
+      
+      return desc
     end
 
   end

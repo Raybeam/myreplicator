@@ -120,11 +120,11 @@ module Myreplicator
     def self.get_outfile_sql options 
       sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
       
-      sql += " FIELDS TERMINATED BY ';~;' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
+      sql += " FIELDS TERMINATED BY '\\0' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
       
       sql += "FROM #{options[:db]}.#{options[:table]} "
 
-      if options[:incremental_col] && options[:incremental_val]
+      if options[:incremental_col] && !options[:incremental_val].blank?
         if options[:incremental_col_type] == "datetime"
           sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
         else
@@ -187,7 +187,7 @@ module Myreplicator
       options = args.extract_options!
       sql = "SELECT * FROM #{options[:db]}.#{options[:table]} " 
       
-      if options[:incremental_col] && options[:incremental_val]
+      if options[:incremental_col] && !options[:incremental_val].blank?
         if options[:incremental_col_type] == "datetime"
           sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
         else

@@ -53,26 +53,15 @@ module Myreplicator
       end
     end
     
-    def schema_changed?
-      exec_on_source()
-    end
+    # def source_mysql_schema
+    #   sql = "describe #{source_schema}.#{table_name}"
+    #   result = exec_on_source(sql)
+    #   return result
+    # end
 
-    def source_mysql_schema
-      sql = "describe #{source_schema}.#{table_name}"
-      result = exec_on_source(sql)
-      return result
-    end
-
-    def destination_schema_vertica
-      sql = "select column_name, data_type From columns where table_name = '#{table_name}' AND table_schema = '#{destination_schema}'"
-      puts sql
-      result = SourceDb.exec_sql("vertica",sql)
-      return result     
-    end
-
-    def destination_schema_mysql
+    # def destination_schema_mysql
       
-    end
+    # end
 
     def export_type?
       if state == "new"
@@ -99,7 +88,11 @@ module Myreplicator
                                       :table => self.table_name)
       result = exec_on_source(sql)
 
-      return result.first.first.to_s(:db)
+      if result.first.nil?
+        return ""
+      else
+        return result.first.first.to_s(:db)
+      end
     end
 
     def update_max_val(max_val = nil)

@@ -15,7 +15,7 @@ module Myreplicator
 
       ExportMetadata.record(:table => @export_obj.table_name,
                             :database => @export_obj.source_schema,
-                            :export_to => @export_obj.export_to,
+                            :export_to => @export_obj.load_to,
                             :export_id => @export_obj.id,
                             :filepath => filepath,
                             :store_in => @export_obj.s3_path,
@@ -37,7 +37,15 @@ module Myreplicator
         
       end # metadata
     end
-    
+
+    def load_to
+      if @export_obj.destination_schema == "vertica"
+        return "vertica"
+      else
+        return "mysql"
+      end
+    end
+
     ##
     # Setups SSH connection to remote host
     ##
@@ -136,27 +144,51 @@ module Myreplicator
     # Exports table incrementally, similar to incremental_export method
     # Dumps file in tmp directory specified in myreplicator.yml
     # Note that directory needs 777 permissions for mysql to be able to export the file
-    # Uses ;~; as the delimiter and new line for lines
+    # Uses \\0 as the delimiter and new line for lines
     ##
 
     def incremental_export_into_outfile metadata
-      max_value = @export_obj.max_value
-      metadata.export_type = "incremental_outfile"
+      unless @export_obj.is_running?
+        max_value = @export_obj.max_value
+        metadata.export_type = "incremental_outfile"        
+        @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
+      
+        options = {
+          :db => @export_obj.source_schema,
+          :table => @export_obj.table_name,
+          :filepath => filepath,
+          :destination_schema => @export_obj.destination_schema}
 
-      @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
+        unless schema_changed?(options)[:changed]
+          options[:incremental_col] = @export_obj.incremental_column
+          options[:incremental_col_type] = @export_obj.incremental_column_type
+          options[:incremental_val] = @export_obj.max_incremental_value
+        end
 
-      cmd = SqlCommands.mysql_export_outfile(:db => @export_obj.source_schema,
-                                             :table => @export_obj.table_name,
-                                             :filepath => filepath,
-                                             :incremental_col => @export_obj.incremental_column,
-                                             :incremental_col_type => @export_obj.incremental_column_type,
-                                             :incremental_val => @export_obj.max_incremental_value)      
-      exporting_state_trans
-      puts "Exporting..."
-      result = execute_export(cmd, metadata)
-      check_result(result, 0)
-      max_value = incremental_export_into_outfile(metadata)
-      return max_value
+        cmd = SqlCommands.mysql_export_outfile(options)      
+        exporting_state_trans
+        puts "Exporting..."
+        result = execute_export(cmd, metadata)
+        check_result(result, 0)
+        metadata.incremental_val = max_value # store max val in metadata
+        @export_obj.update_max_val(max_value) # update max value if export was successful
+      end
+      return false
+    end
+
+    def self.schema_changed? options
+      mysql_schema = Loader.mysql_table_definition(options)
+      vertica_schema = VerticaLoader.destination_table_vertica(options)
+
+      # empty result set from vertica means table does not exist 
+      unless vertica_schema.size > 0 
+        return {:changed => true, :mysql_schema => mysql_schema, :new => true}
+      end
+
+    
+      #TODO COMPARISON
+
+      return {:changed => false}
     end
 
     ##
