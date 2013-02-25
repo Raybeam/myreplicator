@@ -18,8 +18,7 @@ module Myreplicator
                   :on_duplicate,
                   :filepath,
                   :zipped,
-                  :error,
-                  :new_schema)
+                  :error)
 
     attr_reader :failure_callbacks
     attr_reader :success_callbacks
@@ -163,8 +162,7 @@ module Myreplicator
         :zipped => @zipped,
         :export_type => @export_type,
         :export_to => @export_to,
-        :store_in => @store_in,
-        :new_schema => @new_schema
+        :store_in => @store_in
       }
       return obj.to_json
     end
@@ -211,7 +209,6 @@ module Myreplicator
       @zipped = options[:zipped].nil? ? false : options[:zipped]
       @store_in = options[:store_in] if options[:store_in]
       @export_to = options[:export_to] if options[:export_to]
-      @new_schema = options[:new_schema] if options[:new_schema]
       @ssh = nil
 
       @success_callbacks = []
