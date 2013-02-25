@@ -1,4 +1,4 @@
-module VerticaUtils
+module Myreplicator
   class VerticaTypes
   
     def self.convert type, col_type
