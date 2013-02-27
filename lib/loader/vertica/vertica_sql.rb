@@ -2,7 +2,6 @@ module Myreplicator
   class VerticaSql
   
     def self.create_table_stmt options
-
       sql = "CREATE TABLE IF NOT EXISTS #{options[:vertica_db]}."
       sql += "#{options[:vertica_schema]}." if options[:vertica_schema]
       sql += "#{options[:table]} ("

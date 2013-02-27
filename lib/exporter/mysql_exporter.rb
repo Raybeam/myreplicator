@@ -176,7 +176,32 @@ module Myreplicator
       return false
     end
 
+    def self.compare_schemas vertica_schema, mysql_schema
+      if vertica_schema.size != mysql_schema.size
+        return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+      else
+        index = 0
+        while index < vertica_schema.size
+          # puts vertica_schema.rows[index][:column_name]  + " " + mysql_schema[index]["column_name"]
+          # check for column name
+          if vertica_schema.rows[index][:column_name] != mysql_schema[index]["column_name"]
+            return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+          end
+  
+          # puts vertica_schema.rows[index][:data_type]  + " " + VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"])
+          # check for column's data type
+          if (vertica_schema.rows[index][:data_type] != VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"]) and vertica_schema.rows[index][:data_type] != "timestamp")
+            return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+          end
+          # and others ?? (PRIMARY, DEFAULT NULL, etc.)
+          index += 1
+        end
+      end
+      return nil      
+    end
+    
     def self.schema_changed? options
+      puts options
       mysql_schema = Loader.mysql_table_definition(options)
       vertica_schema = VerticaLoader.destination_table_vertica(options)
 
@@ -185,13 +210,16 @@ module Myreplicator
         return {:changed => true, :mysql_schema => mysql_schema, :new => true}
       end
       
-      vertica_schema.each do |row|
-        
+      # compare two schemas
+      mysql_schema_simple_form = []
+      mysql_schema.each(:as => :hash) do |row|
+        mysql_schema_simple_form << row  
       end
-
-      #TODO COMPARISON
-
-      return {:changed => false}
+      
+      mysql_schema = mysql_schema_simple_form
+      result = compare_schemas(vertica_schema, mysql_schema)
+      result =  {:changed => false} if result.blank?
+      return result
     end
 
     ##

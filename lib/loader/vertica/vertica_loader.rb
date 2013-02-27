@@ -9,8 +9,10 @@ module Myreplicator
           columns << row
         end
         options[:columns] = columns
-        
+
         sql = Myreplicator::VerticaSql.create_table_stmt options
+        puts sql
+        VerticaDb::Base.connection.execute sql
       end
 
       def destination_table_vertica options
@@ -28,9 +30,23 @@ module Myreplicator
       # Drop table
       # Rename table
       ##
+      # rasing a concern: using the same schema or the tmp schema for the tmp table? Vertica doesn't lock the schema
       def apply_schema_change options
-
+        #create a temp table
+        temp_table = "temp" + options[:table] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
+        Myreplicator::VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
+                                                            :vertica_db => options[:db], 
+                                                            :vertica_schema => options[:schema],
+                                                            :table => temp_table
+                                                          })
+        #load : from the file or dump the whole source table and then load?
+                                                          
+        #drop
+                                                          
+        #rename
       end
+
+      
 
       # def create_all_tables db
       #   tables = Loader::SourceDb.get_tables(db)
@@ -69,20 +85,36 @@ module Myreplicator
       # Loader::VerticaLoader.load({:schema => "king", :table => "category_overview_data", :file => "tmp/vertica/category_overview_data.tsv", :null_value => "NULL"})
       def load *args
         options = args.extract_options!
-
-        schema_check = MysqlExporter.schema_changed?(:table => options[:table_name], 
+        Kernel.p options
+        
+        #options = {:table => "app_csvs", :db => "public", :source_schema => "okl_dev"}
+        schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table], 
                                                      :destination_schema => options[:db], 
                                                      :source_schema => options[:source_schema])
         
-        if schema_check[:new]
-          
-        elsif schema_check[:changed]
-          apply_schema_change options         
+        begin
+          if schema_check[:new]
+              Myreplicator::VerticaLoader.create_table({:mysql_schema => schema_check[:mysql_schema],
+                                                    :vertica_db => options[:db], 
+                                                    :vertica_schema => options[:schema],
+                                                    :table => options[:table]
+                                                  })
+          elsif schema_check[:changed]
+            apply_schema_change({:mysql_schema => schema_check[:mysql_schema],
+                                 :vertica_db => options[:db],
+                                 :vertica_schema => options[:schema],
+                                 :table => options[:table]
+          }) 
+                   
+          end
+        rescue Exception => e
+          raise e.message
         end
 
         list_of_nulls =  ["0000-00-00"]
-        options = args.extract_options!
         prepared_options = prepare_options options
+        Kernel.p options
+        Kernel.p prepared_options
         Kernel.p prepared_options[:file]
         if prepared_options[:file].blank?
           raise "No input file"

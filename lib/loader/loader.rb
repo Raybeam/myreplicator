@@ -256,6 +256,7 @@ module Myreplicator
     end
 
     def self.mysql_table_definition options
+      Kernel.p options
       sql = "SELECT table_schema, table_name, column_name, is_nullable, data_type, column_type, column_key "
       sql += "FROM INFORMATION_SCHEMA.COLUMNS where table_name = '#{options[:table]}' "
       sql += "and table_schema = '#{options[:source_schema]}';"
@@ -263,7 +264,7 @@ module Myreplicator
       puts sql
       
       desc = DB.exec_sql(options[:source_schema], sql)
-      
+      puts desc
       return desc
     end
 
