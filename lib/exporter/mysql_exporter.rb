@@ -185,19 +185,19 @@ module Myreplicator
           # puts vertica_schema.rows[index][:column_name]  + " " + mysql_schema[index]["column_name"]
           # check for column name
           if vertica_schema.rows[index][:column_name] != mysql_schema[index]["column_name"]
-            return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+            return true
           end
   
           # puts vertica_schema.rows[index][:data_type]  + " " + VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"])
           # check for column's data type
           if (vertica_schema.rows[index][:data_type] != VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"]) and vertica_schema.rows[index][:data_type] != "timestamp")
-            return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+            return true
           end
           # and others ?? (PRIMARY, DEFAULT NULL, etc.)
           index += 1
         end
       end
-      return nil      
+      return false      
     end
     
     def self.schema_changed? options
@@ -216,9 +216,12 @@ module Myreplicator
         mysql_schema_simple_form << row  
       end
       
-      mysql_schema = mysql_schema_simple_form
-      result = compare_schemas(vertica_schema, mysql_schema)
-      result =  {:changed => false} if result.blank?
+      mysql_schema_2 = mysql_schema_simple_form
+      if compare_schemas(vertica_schema, mysql_schema_2)
+        result =  {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+      else
+        result =  {:changed => false}
+      end
       return result
     end
 
