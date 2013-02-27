@@ -184,8 +184,11 @@ module Myreplicator
       unless vertica_schema.size > 0 
         return {:changed => true, :mysql_schema => mysql_schema, :new => true}
       end
+      
+      vertica_schema.each do |row|
+        
+      end
 
-    
       #TODO COMPARISON
 
       return {:changed => false}
