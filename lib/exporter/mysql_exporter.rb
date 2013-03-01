@@ -23,13 +23,11 @@ module Myreplicator
 
         prepare metadata
 
-        case @export_obj.export_type?
-        when :new
+        if @export_obj.export_type? == :new && load_to == "mysql"
           on_failure_state_trans(metadata, "new") # If failed, go back to new
           on_export_success(metadata)
           initial_export metadata
-
-        when :incremental
+        elsif @export_obj.export_type? == :incremental 
           on_failure_state_trans(metadata, "failed") # Set state trans on failure
           on_export_success(metadata)
           incremental_export metadata
