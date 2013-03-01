@@ -186,7 +186,11 @@ module Myreplicator
       
       case metadata.export_to 
       when "vertica"
+        options = {:table_name => exp.table_name, :db => ActiveRecord::Base.configurations["vertica"]["database"],
+          :filepath => metadata.destination_filepath(tmp_dir), :source_schema => exp.source_schema, :export_id => metadata.export_id}
         options[:destination_schema] = exp.destination_schema
+        Kernel.p "===== LOAD TO VERTICA ====="
+        Kernel.p options
         Myreplicator::VerticaLoader.load options
       when "mysql"
         cmd = ImportSql.load_data_infile(options)

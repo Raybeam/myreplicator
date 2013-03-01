@@ -31,22 +31,47 @@ module Myreplicator
       # Rename table
       ##
       # rasing a concern: using the same schema or the tmp schema for the tmp table? Vertica doesn't lock the schema
-      def apply_schema_change options
-        #create a temp table
-        temp_table = "temp" + options[:table] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
+      def apply_schema_change options, temp_table
         Myreplicator::VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
-                                                            :vertica_db => options[:db], 
-                                                            :vertica_schema => options[:schema],
-                                                            :table => temp_table
+                                                            :vertica_db => options[:vertica_db], 
+                                                            :vertica_schema => options[:vertica_schema],
+                                                            :table => temp_table,
+                                                            :mysql_table => options[:table]
                                                           })
-        #load : from the file or dump the whole source table and then load?
-                                                          
-        #drop
-                                                          
-        #rename
       end
 
-      
+      def full_load options, temp_table
+        export_id = options[:export_id]
+        new_options = prepare_options options
+        begin
+          a = Myreplicator::Export.find(export_id)
+          a.max_incremental_value = "0"
+          a.save!
+          a.export
+          b = Myreplicator::Transporter
+          b.perform
+          file = File.join(Myreplicator.app_root,"tmp", "myreplicator", "#{a.filename}")
+          `gunzip #{file}.gz`
+          new_options[:file] = file
+          new_options[:table] = temp_table
+          new_options[:schema] = options[:vertica_schema]
+          
+          vertica_copy new_options
+          
+          #drop
+          FileUtils.rm file
+          FileUtils.rm "#{file}.json"
+          sql = "DROP TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
+          VerticaDb::Base.connection.execute sql
+          #rename
+          sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
+          VerticaDb::Base.connection.execute sql
+        rescue Exception => e
+          raise e.message 
+        ensure
+          
+        end
+      end
 
       # def create_all_tables db
       #   tables = Loader::SourceDb.get_tables(db)
@@ -67,59 +92,75 @@ module Myreplicator
     
       def prepare_options *args
         options = args.extract_options!
-        options.reverse_merge!(
-          :host => "sfo-load-dw-01",
-          :user => "vertica",
-          :pass => "test",
-          :db => "bidw",
-          :schema => "test",
-          :table => "",
-          :file => "",
+        vertica_options =ActiveRecord::Base.configurations["vertica"]
+        
+        result = options.clone
+        result.reverse_merge!(
+          :host => vertica_options["host"],
+          :user => vertica_options["username"],
+          :pass => vertica_options["password"],
+          :db   => vertica_options["database"],
+          :schema => options[:destination_schema],
+          :table => options[:table_name],
+          :file => options[:filepath],
           :delimiter => "\t",
           :null_value => "NULL",
           :enclosed => ""
         )
-        return options  
+        if !vertica_options["vsql"].blank?
+          result.reverse_merge!(
+            :vsql => vertica_options["vsql"]
+            )
+        else
+          result.reverse_merge!(
+            :vsql => "/opt/vertica/bin/vsql"
+          )
+        end
+        
+        return result  
       end
       
       # Loader::VerticaLoader.load({:schema => "king", :table => "category_overview_data", :file => "tmp/vertica/category_overview_data.tsv", :null_value => "NULL"})
       def load *args
         options = args.extract_options!
-        Kernel.p options
-        
         #options = {:table => "app_csvs", :db => "public", :source_schema => "okl_dev"}
-        schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table], 
-                                                     :destination_schema => options[:db], 
+        schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
+                                                     :destination_schema => options[:destination_schema], 
                                                      :source_schema => options[:source_schema])
         
+        #create a temp table
+        temp_table = "temp_" + options[:table_name] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
+        ops = {:mysql_schema => schema_check[:mysql_schema],
+               :vertica_db => options[:db],
+               :vertica_schema => options[:destination_schema],
+               :table => options[:table_name],
+               :export_id => options[:export_id]
+        }
         begin
           if schema_check[:new]
-              Myreplicator::VerticaLoader.create_table({:mysql_schema => schema_check[:mysql_schema],
-                                                    :vertica_db => options[:db], 
-                                                    :vertica_schema => options[:schema],
-                                                    :table => options[:table]
-                                                  })
+            create_table(ops)
+            apply_schema_change(ops, temp_table)
+            #vertica_copy options
+            full_load(ops, temp_table) 
           elsif schema_check[:changed]
-            apply_schema_change({:mysql_schema => schema_check[:mysql_schema],
-                                 :vertica_db => options[:db],
-                                 :vertica_schema => options[:schema],
-                                 :table => options[:table]
-          }) 
-                   
+            apply_schema_change(ops, temp_table)
+            full_load(ops, temp_table)
+          else
+            vertica_copy options
           end
         rescue Exception => e
           raise e.message
         end
-
+      end
+      
+      def vertica_copy * args
+        options = args.extract_options!
         list_of_nulls =  ["0000-00-00"]
         prepared_options = prepare_options options
-        Kernel.p options
-        Kernel.p prepared_options
-        Kernel.p prepared_options[:file]
         if prepared_options[:file].blank?
           raise "No input file"
         end
-      
+        
         begin
           process_file(:file => prepared_options[:file], :list_of_nulls => list_of_nulls, :null_value => prepared_options[:null_value])
           cmd = get_vsql_command(prepared_options)
@@ -134,8 +175,8 @@ module Myreplicator
         file_extension = prepared_options[:file].split('.').last
         file_handler = ""
         file_handler = "GZIP" if file_extension == "gz" 
-        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY \'#{prepared_options[:enclosed]}\' EXCEPTIONS 'tmp/vertica/load_exceptions.log';"
-        cmd = "/opt/vertica/bin/vsql -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
+        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY \'#{prepared_options[:enclosed]}\' EXCEPTIONS 'load_exceptions.log';"
+        cmd = "#{prepared_options[:vsql]} -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
         return cmd
       end
       

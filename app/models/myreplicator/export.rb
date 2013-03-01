@@ -87,11 +87,15 @@ module Myreplicator
                                       :db => self.source_schema,
                                       :table => self.table_name)
       result = exec_on_source(sql)
-
       if result.first.nil?
         return ""
       else
-        return result.first.first.to_s(:db)
+        case result.first.first.class.to_s
+        when "Symbol", "Fixnum"
+          return result.first.first.to_s
+        else
+          return result.first.first.to_s(:db)
+        end
       end
     end
 
@@ -124,7 +128,7 @@ module Myreplicator
     ##
     def connection_factory type
       config = Myreplicator.configs[self.source_schema]
-
+      
       case type
       when :ssh
         if config.has_key? "ssh_password"

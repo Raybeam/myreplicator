@@ -104,7 +104,7 @@ module Myreplicator
               sftp.download!(dump_file, local_dump_file)
               Transporter.remove!(export, json_file, dump_file)
               # store back up as well
-              unless metadata.backup_path.blank?
+              unless metadata.store_in.blank?
                 Transporter.backup_files(metadata.backup_path, json_local_path, local_dump_file)
               end
             end

@@ -15,7 +15,7 @@ module Myreplicator
 
       ExportMetadata.record(:table => @export_obj.table_name,
                             :database => @export_obj.source_schema,
-                            :export_to => @export_obj.load_to,
+                            :export_to => load_to,
                             :export_id => @export_obj.id,
                             :filepath => filepath,
                             :store_in => @export_obj.s3_path,
@@ -39,7 +39,7 @@ module Myreplicator
     end
 
     def load_to
-      if @export_obj.destination_schema == "vertica"
+      if @export_obj.export_to == "vertica"
         return "vertica"
       else
         return "mysql"
@@ -75,12 +75,10 @@ module Myreplicator
       metadata.export_type = "initial"
       max_value = @export_obj.max_value if @export_obj.incremental_export?
       cmd = initial_mysqldump_cmd
-
       exporting_state_trans # mark exporting
 
       puts "Exporting..."
       result = execute_export(cmd, metadata)
-      
       check_result(result, 0)
 
       @export_obj.update_max_val(max_value) if @export_obj.incremental_export?
@@ -100,7 +98,7 @@ module Myreplicator
                                                :filepath => filepath,
                                                :table => @export_obj.table_name)
       end
-
+      
       return cmd
     end
     
@@ -137,6 +135,7 @@ module Myreplicator
       cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
                                      :filepath => filepath,
                                      :sql => sql)
+      
       return cmd
     end
 

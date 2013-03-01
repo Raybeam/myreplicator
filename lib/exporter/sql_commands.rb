@@ -36,7 +36,7 @@ module Myreplicator
       # cmd += "--tab=#{options[:filepath]} "
       # cmd += "--fields-enclosed-by=\'\"\' "
       # cmd += "--fields-escaped-by=\'\\\\\' "
-
+        
       return cmd
     end
 
@@ -80,16 +80,17 @@ module Myreplicator
       options = args.extract_options!
       options.reverse_merge! :flags => []
       db = options[:db]
+      
       # Database host when ssh'ed into the db server
       
       db_host = "127.0.0.1" 
-
+      
       if !ssh_configs(db)["ssh_db_host"].blank? 
         db_host =  ssh_configs(db)["ssh_db_host"]
       elsif !db_configs(db)["host"].blank?
-        db_host += db_configs(db)["host"]
+        db_host = db_configs(db)["host"]
       end
-
+      
       flags = ""
 
       self.mysql_flags.each_pair do |flag, value|
