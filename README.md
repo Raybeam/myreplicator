@@ -16,6 +16,7 @@ Configuration
 * Create a yaml file called myreplicator.yml under the config folder in your rails app
 * Set the temporary file storage path for the replicator to use "tmp_path"
 * Database configurations should be stored in database.yml file
+* Databases that need to be replicated should be marked by adding key  myreplicator: true to the database.yml file.
 * The code/UI use the database names from database.yml file to connect to the correct source database.
  
 Available configuartions for the engine:
@@ -29,7 +30,7 @@ Available configuartions for the engine:
 * Myreplicator.authenticated # Flag for authentication
 * Myreplicator.login_redirect # redirect after authentication
 
-Sample Yaml file
+Sample Myreplicator Yaml file
 ---------------------------
 	myreplicator:
 	  tmp_path: # use this if you do not want to store files under tmp
@@ -57,6 +58,19 @@ Sample Yaml file
  	   ssh_db_host: 127.0.0.1
 	   ssh_private_key: ~/.ssh/team.pem
 	   ssh_tmp_dir: /home/ubuntu/myreplicator_tmp
+
+
+Sample Database Yaml file
+---------------------------
+	uploads:
+	  adapter: mysql2
+	  host: __DW_MYSQL_HOST__
+	  port: __DW_MYSQL_PORT__
+	  username:  __DW_MYSQL_USER__
+          password: __DW_MYSQL_PASS__
+          database: uploads
+          myreplicator: true
+
 
 Usage
 -----

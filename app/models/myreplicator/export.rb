@@ -165,10 +165,15 @@ module Myreplicator
     ##
     def self.available_dbs
       dbs = ActiveRecord::Base.configurations.keys
-      dbs.delete("development")
-      dbs.delete("production")
-      dbs.delete("test")
-      return dbs
+      available = [] 
+
+      dbs.each do |db|
+        db_config = ActiveRecord::Base.configurations[db]
+        unless db_config["myreplicator"].nil?
+          available << db if db_config["myreplicator"]
+        end
+      end
+      return available
     end
 
     ##

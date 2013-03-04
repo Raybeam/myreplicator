@@ -16,6 +16,7 @@ okl_dev:
   username: sas
   password: sasan
   host: 127.0.0.1
+  myreplicator: true
 
 okl_test:
   adapter: mysql2
@@ -23,6 +24,7 @@ okl_test:
   username: xbox
   password: okl
   host: 127.0.0.1
+  myreplicator: true
 
 myreplicator:
   adapter: mysql2
