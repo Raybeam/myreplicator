@@ -232,9 +232,8 @@ function editInit(){
     }
   }
   CronUI.translate();
-  <% if @export.export_to != 'vertica' %>
   $("#export_table_name").select2("val","<%= @export.table_name %>")
-  <% else %>
+  <% if @export.export_to == 'vertica' %>
     $("#export_destination_schema").select2("destroy").before('<input type="text" id="export_destination_schema" name="export[destination_schema]" value="<%= @export.destination_schema %>"/>').remove();
   <% end %>
 }
