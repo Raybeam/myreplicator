@@ -39,7 +39,11 @@ module Myreplicator
       ActiveRecord::Base.verify_active_connections!
       ActiveRecord::Base.connection.reconnect!
       export_obj = Export.find(export_id)
-      export_obj.export
+
+      if export_obj.active
+        export_obj.export
+      end
+
      end
 
      ##
