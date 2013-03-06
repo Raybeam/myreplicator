@@ -103,7 +103,7 @@ module Myreplicator
           :schema => options[:destination_schema],
           :table => options[:table_name],
           :file => options[:filepath],
-          :delimiter => "\t",
+          :delimiter => "\\0",
           :null_value => "NULL",
           :enclosed => ""
         )

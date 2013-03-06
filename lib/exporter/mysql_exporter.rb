@@ -159,7 +159,7 @@ module Myreplicator
           :filepath => filepath,
           :destination_schema => @export_obj.destination_schema}
 
-        unless schema_changed?(options)[:changed]
+        unless MysqlExporter.schema_changed?(options)[:changed]
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
           options[:incremental_val] = @export_obj.max_incremental_value
@@ -204,7 +204,7 @@ module Myreplicator
       end
       return false      
     end
-    
+
     def self.schema_changed? options
       puts options
       mysql_schema = Loader.mysql_table_definition(options)

@@ -121,7 +121,7 @@ module Myreplicator
     def self.get_outfile_sql options 
       sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
       
-      sql += " FIELDS TERMINATED BY '\\0' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
+      sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
       
       sql += "FROM #{options[:db]}.#{options[:table]} "
 
