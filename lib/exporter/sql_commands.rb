@@ -22,7 +22,7 @@ module Myreplicator
       if !ssh_configs(db)["ssh_db_host"].blank? 
         db_host =  ssh_configs(db)["ssh_db_host"]
       elsif !db_configs(db)["host"].blank?
-        db_host += db_configs(db)["host"]
+        db_host = db_configs(db)["host"]
       end
 
       cmd = Myreplicator.mysqldump
@@ -159,15 +159,22 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
-    
-      cmd = Myreplicator.mysql
-      cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
-      cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
-      cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
-      cmd += "--execute=\"#{get_outfile_sql(options)}\" "
-      
-      puts cmd
 
+        # Database host when ssh'ed into the db server
+        db_host = "127.0.0.1"
+        
+        if !ssh_configs(db)["ssh_db_host"].blank?
+          db_host =  ssh_configs(db)["ssh_db_host"]
+        elsif !db_configs(db)["host"].blank?
+          db_host = db_configs(db)["host"]
+        end
+        
+        cmd = Myreplicator.mysql
+        cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
+        cmd += "-h#{db_host} "
+        cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
+        cmd += "--execute=\"#{get_outfile_sql(options)}\" "
+        puts cmd
       return cmd
     end
 
