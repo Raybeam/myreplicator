@@ -30,7 +30,7 @@ module Myreplicator
         elsif @export_obj.export_type? == :incremental or load_to == "vertica"
           on_failure_state_trans(metadata, "failed") # Set state trans on failure
           on_export_success(metadata)
-          incremental_export metadata
+          incremental_export_into_outfile metadata
         end
         
       end # metadata
@@ -146,10 +146,13 @@ module Myreplicator
 
     def incremental_export_into_outfile metadata
       unless @export_obj.is_running?
-        max_value = @export_obj.max_value
-        metadata.export_type = "incremental_outfile"        
-        @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
-      
+
+        if @export_obj.export_type == "incremental"
+          max_value = @export_obj.max_value
+          metadata.export_type = "incremental_outfile"        
+          @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
+        end
+
         options = {
           :db => @export_obj.source_schema,
           :table => @export_obj.table_name,
@@ -167,25 +170,30 @@ module Myreplicator
         puts "Exporting..."
         result = execute_export(cmd, metadata)
         check_result(result, 0)
-        metadata.incremental_val = max_value # store max val in metadata
-        @export_obj.update_max_val(max_value) # update max value if export was successful
+
+        if @export_obj.export_type == "incremental"
+          metadata.incremental_val = max_value # store max val in metadata
+          @export_obj.update_max_val(max_value) # update max value if export was successful
+        end
       end
+
       return false
     end
 
     def self.compare_schemas vertica_schema, mysql_schema
       if vertica_schema.size != mysql_schema.size
-        return {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
+        return {:changed => true, 
+          :mysql_schema => mysql_schema, 
+          :vertica_schema => vertica_schema,
+          :new => false}
       else
         index = 0
         while index < vertica_schema.size
-          # puts vertica_schema.rows[index][:column_name]  + " " + mysql_schema[index]["column_name"]
           # check for column name
           if vertica_schema.rows[index][:column_name] != mysql_schema[index]["column_name"]
             return true
           end
   
-          # puts vertica_schema.rows[index][:data_type]  + " " + VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"])
           # check for column's data type
           if (vertica_schema.rows[index][:data_type] != VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"]) and vertica_schema.rows[index][:data_type] != "timestamp")
             return true

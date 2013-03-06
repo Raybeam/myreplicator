@@ -1,7 +1,7 @@
 <% 
 #rather than yaml arrays of the drop downs
 export_to = ["destination_db","backup","vertica"]
-export_type = ["incremental","fulldump"]
+export_type = ["incremental","all"]
 %>
 <%= form_for(@export) do |f| %>
   <% if @export.errors.any? %>
