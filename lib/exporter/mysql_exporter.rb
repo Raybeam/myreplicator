@@ -278,6 +278,7 @@ module Myreplicator
         update_export(:state => state, 
                       :export_finished_at => Time.now, 
                       :error => metadata.error)
+        raise Exceptions::ExportError.new(metadata.error)
       end
     end
 
