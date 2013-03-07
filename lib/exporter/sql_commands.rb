@@ -138,7 +138,7 @@ module Myreplicator
 
     ##
     # Export using outfile
-    # ;~; delimited
+    # \\0 delimited
     # terminated by newline 
     # Location of the output file needs to have 777 perms
     ##
@@ -148,10 +148,16 @@ module Myreplicator
       db = options[:db]
 
       # Database host when ssh'ed into the db server
-      db_host = ssh_configs(db)["ssh_db_host"].nil? ? "127.0.0.1" : ssh_configs(db)["ssh_db_host"]
-
+      db_host = "127.0.0.1"
+      
+      if !ssh_configs(db)["ssh_db_host"].blank?
+        db_host =  ssh_configs(db)["ssh_db_host"]
+      elsif !db_configs(db)["host"].blank?
+        db_host = db_configs(db)["host"]
+      end
+      
       flags = ""
-
+      
       self.mysql_flags.each_pair do |flag, value|
         if options[:flags].include? flag
           flags += " --#{flag} "
@@ -160,21 +166,20 @@ module Myreplicator
         end
       end
 
-        # Database host when ssh'ed into the db server
-        db_host = "127.0.0.1"
-        
-        if !ssh_configs(db)["ssh_db_host"].blank?
-          db_host =  ssh_configs(db)["ssh_db_host"]
-        elsif !db_configs(db)["host"].blank?
-          db_host = db_configs(db)["host"]
-        end
-        
-        cmd = Myreplicator.mysql
-        cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
-        cmd += "-h#{db_host} "
-        cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
-        cmd += "--execute=\"#{get_outfile_sql(options)}\" "
-        puts cmd
+      cmd = Myreplicator.mysql
+      cmd += "#{flags} "
+      
+      if db_configs(db).has_key? "socket"
+        cmd += "--socket=#{db_configs(db)["socket"]} " 
+      else
+        cmd += "-u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
+      end
+      
+      cmd += "-h#{db_host} " if db_configs(db)["host"].blank?
+      cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
+      cmd += "--execute=\"#{get_outfile_sql(options)}\" "
+      
+      puts cmd
       return cmd
     end
 
