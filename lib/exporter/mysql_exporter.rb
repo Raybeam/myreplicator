@@ -101,43 +101,6 @@ module Myreplicator
     end
     
     ##
-    # Exports table incrementally, using the incremental column specified
-    # If column is not specified, it will export the entire table 
-    # Maximum value of the incremental column is recorded BEFORE export starts
-    ##
-
-    def incremental_export metadata
-      unless @export_obj.is_running?
-        max_value = @export_obj.max_value
-        metadata.export_type = "incremental"
-        @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
-        
-        cmd = incremental_export_cmd 
-        exporting_state_trans # mark exporting
-        puts "Exporting..."
-        result = execute_export(cmd, metadata)
-        check_result(result, 0)
-        metadata.incremental_val = max_value # store max val in metadata
-        @export_obj.update_max_val(max_value) # update max value if export was successful
-      end
-      return false
-    end
-
-    def incremental_export_cmd
-      sql = SqlCommands.export_sql(:db => @export_obj.source_schema,
-                                   :table => @export_obj.table_name,
-                                   :incremental_col => @export_obj.incremental_column,
-                                   :incremental_col_type => @export_obj.incremental_column_type,
-                                   :incremental_val => @export_obj.max_incremental_value)      
-      
-      cmd = SqlCommands.mysql_export(:db => @export_obj.source_schema,
-                                     :filepath => filepath,
-                                     :sql => sql)
-      
-      return cmd
-    end
-
-    ##
     # Exports table incrementally, similar to incremental_export method
     # Dumps file in tmp directory specified in myreplicator.yml
     # Note that directory needs 777 permissions for mysql to be able to export the file
@@ -146,10 +109,10 @@ module Myreplicator
 
     def incremental_export_into_outfile metadata
       unless @export_obj.is_running?
-
+        
         if @export_obj.export_type == "incremental"
           max_value = @export_obj.max_value
-          metadata.export_type = "incremental_outfile"        
+          metadata.export_type = "incremental"        
           @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
         end
 
@@ -159,7 +122,11 @@ module Myreplicator
           :filepath => filepath,
           :destination_schema => @export_obj.destination_schema}
 
-        unless MysqlExporter.schema_changed?(options)[:changed]
+        schema_status = MysqlExporter.schema_changed?(options)
+
+        if schema_status[:changed]
+          metadata.export_type = "initial"
+        else
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
           options[:incremental_val] = @export_obj.max_incremental_value
@@ -182,10 +149,7 @@ module Myreplicator
 
     def self.compare_schemas vertica_schema, mysql_schema
       if vertica_schema.size != mysql_schema.size
-        return {:changed => true, 
-          :mysql_schema => mysql_schema, 
-          :vertica_schema => vertica_schema,
-          :new => false}
+        return true
       else
         index = 0
         while index < vertica_schema.size
@@ -195,7 +159,7 @@ module Myreplicator
           end
   
           # check for column's data type
-          if (vertica_schema.rows[index][:data_type] != VerticaTypes.convert(mysql_schema[index]["data_type"],mysql_schema[index]["column_type"]) and vertica_schema.rows[index][:data_type] != "timestamp")
+          if compre_datatypes index, vertica_schema, mysql_schema
             return true
           end
           # and others ?? (PRIMARY, DEFAULT NULL, etc.)
@@ -203,6 +167,17 @@ module Myreplicator
         end
       end
       return false      
+    end
+
+    def self.compare_datatypes index, vertica_schema, mysql_schema
+      type = VerticaTypes.convert mysql_schema[index]["data_type"], mysql_schema[index]["column_type"]
+      if vertica_schema.rows[index][:data_type] != type
+        if vertica_schema.rows[index][:data_type] != "timestamp"
+          return true
+        end
+        return false
+      end
+      return false
     end
 
     def self.schema_changed? options

@@ -80,7 +80,11 @@ module Myreplicator
                   :export_id => metadata.export_id) do |log|
 
             if Loader.transfer_completed? metadata
-              Loader.initial_load metadata
+              if metadata.export_to == "vertica"
+                Loader.incremental_load metadata
+              else
+                Loader.initial_load metadata
+              end
               Loader.cleanup metadata
             end
 
@@ -107,7 +111,7 @@ module Myreplicator
                     :file => metadata.filename, 
                     :export_id => metadata.export_id) do |log|
     
-              if Loader.transfer_completed? metadata
+              if Loader.transfer_completed? metadata            
                 Loader.incremental_load metadata
                 Loader.cleanup metadata
               end
@@ -176,22 +180,16 @@ module Myreplicator
       Loader.unzip(metadata.filename)
       metadata.zipped = false
       
-      options = {:table_name => exp.table_name, :db => exp.destination_schema,
-        :filepath => metadata.destination_filepath(tmp_dir), :source_schema => exp.source_schema}
-      
-      if metadata.export_type == "incremental_outfile"
-        options[:fields_terminated_by] = "\\0"
-        options[:lines_terminated_by] = "\\n"
-      end
+      options = {:table_name => exp.table_name, 
+        :db => exp.destination_schema,
+        :filepath => metadata.destination_filepath(tmp_dir), 
+        :source_schema => exp.source_schema,      
+        :fields_terminated_by = "\\0",
+        :lines_terminated_by = "\\n"}
       
       case metadata.export_to 
       when "vertica"
-        options = {:table_name => exp.table_name, :db => ActiveRecord::Base.configurations["vertica"]["database"],
-          :filepath => metadata.destination_filepath(tmp_dir), :source_schema => exp.source_schema, :export_id => metadata.export_id}
-        options[:destination_schema] = exp.destination_schema
-        Kernel.p "===== LOAD TO VERTICA ====="
-        Kernel.p options
-        Myreplicator::VerticaLoader.load options
+        Loader.load_to_vertica options, metadata, exp
       when "mysql"
         cmd = ImportSql.load_data_infile(options)
         puts cmd
@@ -202,6 +200,25 @@ module Myreplicator
           end
         end
       end #case  
+    end
+
+    ##
+    # Load to Vertica
+    ##
+    def self.vertica_load options, metadata, exp
+      options = {:table_name => exp.table_name, 
+        :db => ActiveRecord::Base.configurations["vertica"]["database"],
+        :filepath => metadata.destination_filepath(tmp_dir), 
+        :source_schema => exp.source_schema, :export_id => metadata.export_id,
+        :metadata => metadata
+      }
+      
+      options[:destination_schema] = exp.destination_schema
+      
+      result = Myreplicator::VerticaLoader.load options
+      
+      ##TO DO: Handle unsuccessful vertica loads here
+
     end
 
     ##
@@ -259,8 +276,24 @@ module Myreplicator
       return files
     end
 
+    ##
+    # Clears files that are older than the passed metadata file.
+    # Note: This methoded is provided to ensure no old incremental files
+    # ever get loaded after the schema change algorithm has been applied 
+    ##
+    def self.clear_older_files metadata
+      files = Loader.metadata_files
+      max_date = DateTime.strptime metadata.export_finished_at
+      files.each do |m|
+        if metadata.export_id == m.export_id
+          if max_date > DateTime.strptime(m.export_finished_at)
+            Loader.cleanup m if metadata.filepath != m.filepath
+          end 
+        end
+      end     
+    end
+
     def self.mysql_table_definition options
-      Kernel.p options
       sql = "SELECT table_schema, table_name, column_name, is_nullable, data_type, column_type, column_key "
       sql += "FROM INFORMATION_SCHEMA.COLUMNS where table_name = '#{options[:table]}' "
       sql += "and table_schema = '#{options[:source_schema]}';"

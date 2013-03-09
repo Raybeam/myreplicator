@@ -11,24 +11,25 @@ Installation
     gem install myreplicator
 
 
-Configuration
+Configurations
 ---------------------------
 * Create a yaml file called myreplicator.yml under the config folder in your rails app
-* Set the temporary file storage path for the replicator to use "tmp_path"
+* Set the temporary file storage path for myreplicator to use "tmp_path"
 * Database configurations should be stored in database.yml file
+* Database servers defined in myreplicator.yml must be named as they are in database.yml file.
 * Databases that need to be replicated should be marked by adding key  myreplicator: true to the database.yml file.
-* The code/UI use the database names from database.yml file to connect to the correct source database.
+* The code/UI uses the database names from database.yml file to connect to the correct source database.
  
 Available configuartions for the engine:
 
-* Myreplicator.app_root # host rails application root
-* Myreplicator.tmp_path # location for storing temporary files
-* Myreplicator.mysql # mysql command
-* Myreplicator.mysqldump # mysqldump path
-* Myreplicator.configs # yaml file
-* Myreplicator.auth_required # engine authentication
-* Myreplicator.authenticated # Flag for authentication
-* Myreplicator.login_redirect # redirect after authentication
+* Myreplicator.app_root       : host rails application root
+* Myreplicator.tmp_path       : location for storing temporary files
+* Myreplicator.mysql          : mysql command
+* Myreplicator.mysqldump      : mysqldump path
+* Myreplicator.configs        : yaml file
+* Myreplicator.auth_required  : engine authentication
+* Myreplicator.authenticated  : Flag for authentication
+* Myreplicator.login_redirect : redirect after authentication
 
 Sample Myreplicator Yaml file
 ---------------------------
@@ -45,10 +46,10 @@ Sample Myreplicator Yaml file
 	  login_redirect: /
 
 	  # same as the name of database in database.yml
-	  remote_db_1:
+	  uploads:
 	    ssh_host: localhost
 	    ssh_user: guest
-	    ssh_password: sasanguest
+	    ssh_password: guest
 	    ssh_tmp_dir: /home/guest/tmp
   
 	# Sample connection using the private key
@@ -64,10 +65,10 @@ Sample Database Yaml file
 ---------------------------
 	uploads:
 	  adapter: mysql2
-	  host: __DW_MYSQL_HOST__
-	  port: __DW_MYSQL_PORT__
-	  username:  __DW_MYSQL_USER__
-          password: __DW_MYSQL_PASS__
+	  host: localhost
+	  port: 12345
+	  username:  test
+          password: test
           database: uploads
           myreplicator: true
 

@@ -45,8 +45,6 @@ module Myreplicator
       @dbs = get_dbs
       @tables = db_metadata
       @edit = true
-
-      Myreplicator::Export.schedule_in_resque # schedule in resque
     end
   
     # POST /exports
@@ -70,14 +68,13 @@ module Myreplicator
     # PUT /exports/1.json
     def update
       @export = Export.find(params[:id])
-      Myreplicator::Export.schedule_in_resque # schedule in resque
-
       @dbs = get_dbs
   
       respond_to do |format|
         if @export.update_attributes(params[:export])
           format.html { redirect_to @export, notice: 'Export was successfully updated.' }
           format.json { head :no_content }
+          Myreplicator::Export.schedule_in_resque # schedule in resque
         else
           format.html { render action: "edit" }
           format.json { render json: @export.errors, status: :unprocessable_entity }

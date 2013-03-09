@@ -44,13 +44,11 @@ module Myreplicator
         export_id = options[:export_id]
         new_options = prepare_options options
         begin
-          a = Myreplicator::Export.find(export_id)
-          a.max_incremental_value = "0"
-          a.save!
-          a.export
-          b = Myreplicator::Transporter
-          b.perform
-          file = File.join(Myreplicator.app_root,"tmp", "myreplicator", "#{a.filename}")
+          # a = Myreplicator::Export.find(export_id)
+          # a.max_incremental_value = "0"
+          # a.save!
+          # a.export
+          # file = File.join(Myreplicator.app_root,"tmp", "myreplicator", "#{a.filename}")
           `gunzip #{file}.gz`
           new_options[:file] = file
           new_options[:table] = temp_table
@@ -72,49 +70,27 @@ module Myreplicator
           
         end
       end
-
-      # def create_all_tables db
-      #   tables = Loader::SourceDb.get_tables(db)
-      #   sqls = {}
-      #   tables.each do |table|
-      #     puts "Creating #{db}.#{table}"
-      #     sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
-      #     VerticaDb::Base.connection.execute sql
-      #     sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
-      #     :vertica_table => table,
-      #     :vertica_schema => db,
-      #     :table => table,
-      #     :db => db)
-      #     sqls["#{table}"] = sql
-      #     VerticaDb::Base.connection.execute sql
-      #   end
-      # end
     
       def prepare_options *args
         options = args.extract_options!
-        vertica_options =ActiveRecord::Base.configurations["vertica"]
+        vertica_options = ActiveRecord::Base.configurations["vertica"]
         
         result = options.clone
-        result.reverse_merge!(
-          :host => vertica_options["host"],
-          :user => vertica_options["username"],
-          :pass => vertica_options["password"],
-          :db   => vertica_options["database"],
-          :schema => options[:destination_schema],
-          :table => options[:table_name],
-          :file => options[:filepath],
-          :delimiter => "\\0",
-          :null_value => "NULL",
-          :enclosed => ""
-        )
+        result.reverse_merge!(:host => vertica_options["host"],
+                              :user => vertica_options["username"],
+                              :pass => vertica_options["password"],
+                              :db   => vertica_options["database"],
+                              :schema => options[:destination_schema],
+                              :table => options[:table_name],
+                              :file => options[:filepath],
+                              :delimiter => "\\0",
+                              :null_value => "NULL",
+                              :enclosed => "")
+
         if !vertica_options["vsql"].blank?
-          result.reverse_merge!(
-            :vsql => vertica_options["vsql"]
-            )
+          result.reverse_merge!(:vsql => vertica_options["vsql"])
         else
-          result.reverse_merge!(
-            :vsql => "/opt/vertica/bin/vsql"
-          )
+          result.reverse_merge!(:vsql => "/opt/vertica/bin/vsql")
         end
         
         return result  
@@ -123,6 +99,7 @@ module Myreplicator
       # Loader::VerticaLoader.load({:schema => "king", :table => "category_overview_data", :file => "tmp/vertica/category_overview_data.tsv", :null_value => "NULL"})
       def load *args
         options = args.extract_options!
+        metadata = options[:metadata]
         #options = {:table => "app_csvs", :db => "public", :source_schema => "okl_dev"}
         schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
@@ -131,10 +108,10 @@ module Myreplicator
         #create a temp table
         temp_table = "temp_" + options[:table_name] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
         ops = {:mysql_schema => schema_check[:mysql_schema],
-               :vertica_db => options[:db],
-               :vertica_schema => options[:destination_schema],
-               :table => options[:table_name],
-               :export_id => options[:export_id]
+          :vertica_db => options[:db],
+          :vertica_schema => options[:destination_schema],
+          :table => options[:table_name],
+          :export_id => options[:export_id]          
         }
         begin
           if schema_check[:new]
@@ -142,9 +119,16 @@ module Myreplicator
             apply_schema_change(ops, temp_table)
             #vertica_copy options
             full_load(ops, temp_table) 
+            
+            # clear old incremental files
+            Loader.clear_older_files metadata 
+
           elsif schema_check[:changed]
             apply_schema_change(ops, temp_table)
             full_load(ops, temp_table)
+
+            # clear old incremental files
+            Loader.clear_older_files metadata 
           else
             vertica_copy options
           end
@@ -228,6 +212,24 @@ module Myreplicator
         cmd2 = "gzip tmp/temp.txt -c > #{file}"
         system(cmd2)
       end
+
+
+      # def create_all_tables db
+      #   tables = Loader::SourceDb.get_tables(db)
+      #   sqls = {}
+      #   tables.each do |table|
+      #     puts "Creating #{db}.#{table}"
+      #     sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
+      #     VerticaDb::Base.connection.execute sql
+      #     sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
+      #     :vertica_table => table,
+      #     :vertica_schema => db,
+      #     :table => table,
+      #     :db => db)
+      #     sqls["#{table}"] = sql
+      #     VerticaDb::Base.connection.execute sql
+      #   end
+      # end
 
     end
   end
