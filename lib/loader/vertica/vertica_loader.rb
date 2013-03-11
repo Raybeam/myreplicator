@@ -32,42 +32,45 @@ module Myreplicator
       ##
       # rasing a concern: using the same schema or the tmp schema for the tmp table? Vertica doesn't lock the schema
       def apply_schema_change options, temp_table
-        Myreplicator::VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
-                                                            :vertica_db => options[:vertica_db], 
-                                                            :vertica_schema => options[:vertica_schema],
-                                                            :table => temp_table,
-                                                            :mysql_table => options[:table]
-                                                          })
-      end
+        VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
+                                     :vertica_db => options[:vertica_db], 
+                                     :vertica_schema => options[:vertica_schema],
+                                     :table => temp_table,
+                                     :mysql_table => options[:table]})
 
-      def fully_load options, temp_table
         export_id = options[:export_id]
         new_options = prepare_options options
-        begin
-          new_options[:file] = options[:filepath]
-          new_options[:table] = temp_table
-          new_options[:schema] = options[:vertica_schema]
-          
-          vertica_copy new_options
-          
-          sql = "DROP TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
-          VerticaDb::Base.connection.execute sql
-          #rename
-          sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
-          VerticaDb::Base.connection.execute sql
-        rescue Exception => e
-          raise e.message 
-        ensure
-          
-        end
+        new_options[:file] = options[:filepath]
+        new_options[:table] = temp_table
+        new_options[:schema] = options[:vertica_schema]
+        
+        vertica_copy new_options
+        
+        sql = "DROP TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
+        VerticaDb::Base.connection.execute sql
+        #rename
+        sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
+        VerticaDb::Base.connection.execute sql
+
       end
-    
+      
+      def create_temp_table *args
+        options = args.extract_options!
+        temp_table_name = "tmp_#{options[:table_name]}"
+
+        VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
+                                     :vertica_db => options[:vertica_db], 
+                                     :vertica_schema => options[:vertica_schema],
+                                     :table => temp_table_name,
+                                     :mysql_table => options[:table]})
+        return temp_table_name
+      end
+   
       def prepare_options *args
         options = args.extract_options!
-        vertica_options = ActiveRecord::Base.configurations["vertica"]
-        
-        result = options.clone
-        result.reverse_merge!(:host => vertica_options["host"],
+        vertica_options = ActiveRecord::Base.configurations[options[:destination_db]]
+
+        options.reverse_merge!(:host => vertica_options["host"],
                               :user => vertica_options["username"],
                               :pass => vertica_options["password"],
                               :db   => vertica_options["database"],
@@ -79,12 +82,12 @@ module Myreplicator
                               :enclosed => "")
 
         if !vertica_options["vsql"].blank?
-          result.reverse_merge!(:vsql => vertica_options["vsql"])
+          options.reverse_merge!(:vsql => vertica_options["vsql"])
         else
-          result.reverse_merge!(:vsql => "/opt/vertica/bin/vsql")
+          options.reverse_merge!(:vsql => "/opt/vertica/bin/vsql")
         end
         
-        return result  
+        return options  
       end
       
       # Loader::VerticaLoader.load({:schema => "king", :table => "category_overview_data", :file => "tmp/vertica/category_overview_data.tsv", :null_value => "NULL"})
@@ -97,7 +100,7 @@ module Myreplicator
         Kernel.p metadata.export_type
         #options = {:table => "app_csvs", :destination_schema => "public", :source_schema => "okl_dev"}
         #options = {:table => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
-        schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
+        schema_check = MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
                                                      :source_schema => options[:source_schema])
         
@@ -110,33 +113,21 @@ module Myreplicator
           :export_id => options[:export_id],
           :filepath => metadata[:filepath]
         }
-        begin
-          apply_schema_change(ops, temp_table)
-          if schema_check[:new]
-            create_table(ops)
-            #apply_schema_change(ops, temp_table)
-            #vertica_copy options
-            fully_load(ops, temp_table) 
-          elsif schema_check[:changed]
-            #apply_schema_change(ops, temp_table)
-            if metadata.export_type == 'initial'
-              # clear old incremental files
-              Loader.clear_older_files metadata
-              fully_load(ops, temp_table)
-            else
-              #FileUtils.rm metadata[:filepath] 
-            end
+        if schema_check[:new]
+          create_table(ops)
+          #LOAD DATA IN
+          #vertica_copy options
+        elsif schema_check[:changed]
+          if metadata.export_type == 'initial'
+            Loader.clear_older_files metadat   # clear old incremental files
+            apply_schema_change(ops, temp_table)
           else
-            #apply_schema_change(ops, temp_table)
-            options.reverse_merge!(:temp_table => "#{temp_table}")
-            copy_options = options.clone
-            copy_options[:table_name] = "#{temp_table}"
-            vertica_copy copy_options
-            vertica_merge options
-            #
+            Loader.cleanup metadata #Remove incremental file
           end
-        rescue Exception => e
-          raise e.message
+        else
+          create_temp_table options
+          vertica_copy options
+          vertica_merge options
         end
       end
       
@@ -148,14 +139,13 @@ module Myreplicator
           raise "No input file"
         end
         
-        begin
-          process_file(:file => prepared_options[:file], :list_of_nulls => list_of_nulls, :null_value => prepared_options[:null_value])
-          cmd = get_vsql_copy_command(prepared_options)
-          Kernel.p cmd
-          system(cmd)
-        rescue Exception => e
-          raise e.message
-        end
+        process_file(:file => prepared_options[:file], 
+                     :list_of_nulls => list_of_nulls,
+                     :null_value => prepared_options[:null_value])
+
+        cmd = get_vsql_copy_command(prepared_options)
+        puts cmd
+        system(cmd)
       end
         
       def get_vsql_copy_command prepared_options
@@ -216,23 +206,6 @@ module Myreplicator
         system(cmd2)
       end
 
-
-      # def create_all_tables db
-      #   tables = Loader::SourceDb.get_tables(db)
-      #   sqls = {}
-      #   tables.each do |table|
-      #     puts "Creating #{db}.#{table}"
-      #     sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
-      #     VerticaDb::Base.connection.execute sql
-      #     sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
-      #     :vertica_table => table,
-      #     :vertica_schema => db,
-      #     :table => table,
-      #     :db => db)
-      #     sqls["#{table}"] = sql
-      #     VerticaDb::Base.connection.execute sql
-      #   end
-      # end
       def get_mysql_keys mysql_schema_simple_form
         result = []
         mysql_schema_simple_form.each do |col|
@@ -312,16 +285,12 @@ module Myreplicator
         
       def vertica_merge *args
         options = args.extract_options!
-        
-        
-        
-        
         ops = {:table => options[:table_name], 
         :destination_schema => options[:destination_schema], 
         :source_schema => options[:source_schema]}
-        mysql_schema = Myreplicator::Loader.mysql_table_definition(options)
-        vertica_schema = Myreplicator::VerticaLoader.destination_table_vertica(options)
-        mysql_schema_simple_form = Myreplicator::MysqlExporter.get_mysql_schema_rows mysql_schema
+        mysql_schema = Loader.mysql_table_definition(options)
+        vertica_schema = VerticaLoader.destination_table_vertica(options)
+        mysql_schema_simple_form = MysqlExporter.get_mysql_schema_rows mysql_schema
         # get the column(s) that is(are) used as the primary key
         keys = get_mysql_keys mysql_schema_simple_form
         # get the non key coluns 
@@ -330,9 +299,25 @@ module Myreplicator
         inserted_columns = get_mysql_inserted_columns mysql_schema_simple_form
         #get the vsql merge command 
         sql = get_vsql_merge_command options, keys, none_keys, inserted_columns 
-        #execute
-        
+        #execute        
       end
+
+      # def create_all_tables db
+      #   tables = Loader::SourceDb.get_tables(db)
+      #   sqls = {}
+      #   tables.each do |table|
+      #     puts "Creating #{db}.#{table}"
+      #     sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
+      #     VerticaDb::Base.connection.execute sql
+      #     sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
+      #     :vertica_table => table,
+      #     :vertica_schema => db,
+      #     :table => table,
+      #     :db => db)
+      #     sqls["#{table}"] = sql
+      #     VerticaDb::Base.connection.execute sql
+      #   end
+      # end
 
     end
   end
