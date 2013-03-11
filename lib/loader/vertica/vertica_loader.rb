@@ -40,25 +40,16 @@ module Myreplicator
                                                           })
       end
 
-      def full_load options, temp_table
+      def fully_load options, temp_table
         export_id = options[:export_id]
         new_options = prepare_options options
         begin
-          # a = Myreplicator::Export.find(export_id)
-          # a.max_incremental_value = "0"
-          # a.save!
-          # a.export
-          # file = File.join(Myreplicator.app_root,"tmp", "myreplicator", "#{a.filename}")
-          `gunzip #{file}.gz`
-          new_options[:file] = file
+          new_options[:file] = options[:filepath]
           new_options[:table] = temp_table
           new_options[:schema] = options[:vertica_schema]
           
           vertica_copy new_options
           
-          #drop
-          FileUtils.rm file
-          FileUtils.rm "#{file}.json"
           sql = "DROP TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
           VerticaDb::Base.connection.execute sql
           #rename
@@ -97,10 +88,15 @@ module Myreplicator
       end
       
       # Loader::VerticaLoader.load({:schema => "king", :table => "category_overview_data", :file => "tmp/vertica/category_overview_data.tsv", :null_value => "NULL"})
+      # check for export_type!
       def load *args
         options = args.extract_options!
         metadata = options[:metadata]
-        #options = {:table => "app_csvs", :db => "public", :source_schema => "okl_dev"}
+        Kernel.p "===== metadata ====="
+        Kernel.p metadata
+        Kernel.p metadata.export_type
+        #options = {:table => "app_csvs", :destination_schema => "public", :source_schema => "okl_dev"}
+        #options = {:table => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
         schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
                                                      :source_schema => options[:source_schema])
@@ -111,26 +107,33 @@ module Myreplicator
           :vertica_db => options[:db],
           :vertica_schema => options[:destination_schema],
           :table => options[:table_name],
-          :export_id => options[:export_id]          
+          :export_id => options[:export_id],
+          :filepath => metadata[:filepath]
         }
         begin
+          apply_schema_change(ops, temp_table)
           if schema_check[:new]
             create_table(ops)
-            apply_schema_change(ops, temp_table)
+            #apply_schema_change(ops, temp_table)
             #vertica_copy options
-            full_load(ops, temp_table) 
-            
-            # clear old incremental files
-            Loader.clear_older_files metadata 
-
+            fully_load(ops, temp_table) 
           elsif schema_check[:changed]
-            apply_schema_change(ops, temp_table)
-            full_load(ops, temp_table)
-
-            # clear old incremental files
-            Loader.clear_older_files metadata 
+            #apply_schema_change(ops, temp_table)
+            if metadata.export_type == 'initial'
+              # clear old incremental files
+              Loader.clear_older_files metadata
+              fully_load(ops, temp_table)
+            else
+              #FileUtils.rm metadata[:filepath] 
+            end
           else
-            vertica_copy options
+            #apply_schema_change(ops, temp_table)
+            options.reverse_merge!(:temp_table => "#{temp_table}")
+            copy_options = options.clone
+            copy_options[:table_name] = "#{temp_table}"
+            vertica_copy copy_options
+            vertica_merge options
+            #
           end
         rescue Exception => e
           raise e.message
@@ -147,7 +150,7 @@ module Myreplicator
         
         begin
           process_file(:file => prepared_options[:file], :list_of_nulls => list_of_nulls, :null_value => prepared_options[:null_value])
-          cmd = get_vsql_command(prepared_options)
+          cmd = get_vsql_copy_command(prepared_options)
           Kernel.p cmd
           system(cmd)
         rescue Exception => e
@@ -155,7 +158,7 @@ module Myreplicator
         end
       end
         
-      def get_vsql_command prepared_options
+      def get_vsql_copy_command prepared_options
         file_extension = prepared_options[:file].split('.').last
         file_handler = ""
         file_handler = "GZIP" if file_extension == "gz" 
@@ -230,6 +233,106 @@ module Myreplicator
       #     VerticaDb::Base.connection.execute sql
       #   end
       # end
+      def get_mysql_keys mysql_schema_simple_form
+        result = []
+        mysql_schema_simple_form.each do |col|
+          if col["column_key"] == "PRI"
+            result << col["column_name"]
+          end
+        end
+        return result
+      end
+      
+      def get_mysql_none_keys mysql_schema_simple_form
+        result = []
+        mysql_schema_simple_form.each do |col|
+          if col["column_key"].blank?
+            result << col["column_name"]
+          end
+        end
+        return result
+      end
+      
+      def get_mysql_inserted_columns mysql_schema_simple_form
+        result = []
+        mysql_schema_simple_form.each do |col|
+          result << col["column_name"]
+        end
+        return result
+      end
+      
+      def get_vsql_merge_command options, keys, none_keys, updated_columns
+        sql = "MERGE INTO "
+        sql+= "#{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:table]} target"
+        sql+= "USING #{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:temp_table]} source"
+        sql+= "ON "
+        count = 0
+        keys.each do |k|
+          if count < 1 
+            sql += "source.#{k} = target.#{k} "
+          else
+            sql += "AND source.#{k} = target.#{k} "
+          end
+          count += 1
+        end
+        sql+= "WHEN MATCHED THEN "
+        sql+= "UPDATE SET "
+        count = 1
+        none_keys.each do |nk|
+          if count < none_keys.size
+            sql+= "#{nk} = sources.#{nk}, "
+          else
+            sql+= "#{nk} = sources.#{nk} "
+          end
+          count += 1
+        end
+        sql+= "WHEN NOT MATCHED THEN "
+        sql+= "INSERT ("
+        count = 1
+        inserted_columns.each do |col|
+          if count < inserted_columns.size
+            sql+= "#{col}, "
+          else
+            sql+= "#{col} "
+          end
+          count += 1
+        end
+        sql +=
+        sql+= ") VALUES ("
+        inserted_columns.each do |col|
+          if count < inserted_columns.size
+            sql+= "sources.#{col}, "
+          else
+            sql+= "sources.#{col} "
+          end
+          count += 1
+        end  
+        sql+= ";"      
+      end
+        
+      def vertica_merge *args
+        options = args.extract_options!
+        
+        
+        
+        
+        ops = {:table => options[:table_name], 
+        :destination_schema => options[:destination_schema], 
+        :source_schema => options[:source_schema]}
+        mysql_schema = Myreplicator::Loader.mysql_table_definition(options)
+        vertica_schema = Myreplicator::VerticaLoader.destination_table_vertica(options)
+        mysql_schema_simple_form = Myreplicator::MysqlExporter.get_mysql_schema_rows mysql_schema
+        # get the column(s) that is(are) used as the primary key
+        keys = get_mysql_keys mysql_schema_simple_form
+        # get the non key coluns 
+        none_keys = get_mysql_none_keys mysql_schema_simple_form
+        # get the column to put in the insert part
+        inserted_columns = get_mysql_inserted_columns mysql_schema_simple_form
+        #get the vsql merge command 
+        sql = get_vsql_merge_command options, keys, none_keys, inserted_columns 
+        #execute
+        
+      end
 
     end
   end

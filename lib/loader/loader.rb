@@ -184,8 +184,8 @@ module Myreplicator
         :db => exp.destination_schema,
         :filepath => metadata.destination_filepath(tmp_dir), 
         :source_schema => exp.source_schema,      
-        :fields_terminated_by = "\\0",
-        :lines_terminated_by = "\\n"}
+        :fields_terminated_by => "\\0",
+        :lines_terminated_by => "\\n"}
       
       case metadata.export_to 
       when "vertica"
@@ -205,7 +205,7 @@ module Myreplicator
     ##
     # Load to Vertica
     ##
-    def self.vertica_load options, metadata, exp
+    def self.load_to_vertica options, metadata, exp
       options = {:table_name => exp.table_name, 
         :db => ActiveRecord::Base.configurations["vertica"]["database"],
         :filepath => metadata.destination_filepath(tmp_dir), 
