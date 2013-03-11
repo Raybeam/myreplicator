@@ -27,7 +27,7 @@ module Myreplicator
           on_failure_state_trans(metadata, "new") # If failed, go back to new
           on_export_success(metadata)
           initial_export metadata
-        elsif @export_obj.export_type? == :incremental or load_to == "vertica"
+        elsif @export_obj.export_type? == :incremental || load_to == "vertica"
           on_failure_state_trans(metadata, "failed") # Set state trans on failure
           on_export_success(metadata)
           incremental_export_into_outfile metadata
