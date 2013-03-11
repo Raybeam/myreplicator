@@ -205,7 +205,7 @@ module Myreplicator
     ##
     # Load to Vertica
     ##
-    def self.vertica_load options, metadata, exp
+    def self.load_to_vertica options, metadata, exp
       options = {:table_name => exp.table_name, 
         :db => ActiveRecord::Base.configurations["vertica"]["database"],
         :filepath => metadata.destination_filepath(tmp_dir), 

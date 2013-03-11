@@ -179,6 +179,14 @@ module Myreplicator
       end
       return false
     end
+    
+    def self.get_mysql_schema_rows mysql_schema 
+      mysql_schema_simple_form = []
+      mysql_schema.each(:as => :hash) do |row|
+        mysql_schema_simple_form << row
+      end
+      return mysql_schema_simple_form
+    end
 
     def self.schema_changed? options
       puts options
@@ -191,12 +199,9 @@ module Myreplicator
       end
       
       # compare two schemas
-      mysql_schema_simple_form = []
-      mysql_schema.each(:as => :hash) do |row|
-        mysql_schema_simple_form << row  
-      end
       
-      mysql_schema_2 = mysql_schema_simple_form
+      
+      mysql_schema_2 = get_mysql_schema_rows mysql_schema
       if compare_schemas(vertica_schema, mysql_schema_2)
         result =  {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
       else
