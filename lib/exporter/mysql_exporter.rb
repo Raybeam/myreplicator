@@ -117,14 +117,15 @@ module Myreplicator
         end
 
         options = {
-          :db => @export_obj.source_schema,
+          :source_schema => @export_obj.source_schema,
           :table => @export_obj.table_name,
           :filepath => filepath,
           :destination_schema => @export_obj.destination_schema}
 
         schema_status = MysqlExporter.schema_changed?(options)
-
-        if schema_status[:changed]
+        Kernel.p "===== schema_status ====="
+        Kernel.p schema_status
+        if schema_status[:changed] # && new?
           metadata.export_type = "initial"
         else
           options[:incremental_col] = @export_obj.incremental_column
@@ -132,6 +133,8 @@ module Myreplicator
           options[:incremental_val] = @export_obj.max_incremental_value
         end
 
+        Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
+        Kernel.p options
         cmd = SqlCommands.mysql_export_outfile(options)      
         exporting_state_trans
         puts "Exporting..."
@@ -148,6 +151,8 @@ module Myreplicator
     end
 
     def self.compare_schemas vertica_schema, mysql_schema
+      Kernel.p vertica_schema
+      Kernel.p mysql_schema
       if vertica_schema.size != mysql_schema.size
         return true
       else
@@ -159,7 +164,7 @@ module Myreplicator
           end
   
           # check for column's data type
-          if compre_datatypes index, vertica_schema, mysql_schema
+          if compare_datatypes index, vertica_schema, mysql_schema
             return true
           end
           # and others ?? (PRIMARY, DEFAULT NULL, etc.)
@@ -183,12 +188,14 @@ module Myreplicator
     def self.get_mysql_schema_rows mysql_schema 
       mysql_schema_simple_form = []
       mysql_schema.each(:as => :hash) do |row|
+        puts row
         mysql_schema_simple_form << row
       end
       return mysql_schema_simple_form
     end
 
     def self.schema_changed? options
+      Kernel.p "===== schema_changed? ====="
       puts options
       mysql_schema = Loader.mysql_table_definition(options)
       vertica_schema = VerticaLoader.destination_table_vertica(options)
@@ -197,16 +204,19 @@ module Myreplicator
       unless vertica_schema.size > 0 
         return {:changed => true, :mysql_schema => mysql_schema, :new => true}
       end
-      
+      Kernel.p "***** 1 *****"
       # compare two schemas
       
       
       mysql_schema_2 = get_mysql_schema_rows mysql_schema
       if compare_schemas(vertica_schema, mysql_schema_2)
+        Kernel.p "***** 2 *****"
         result =  {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
       else
-        result =  {:changed => false}
+        Kernel.p "***** 3 *****"
+        result =  {:changed => false, :mysql_schema => mysql_schema}
       end
+      Kernel.p result
       return result
     end
 

@@ -31,7 +31,7 @@ module Myreplicator
     def self.load
       initials = []
       incrementals = []
-      all_files = Loader.metadata_files
+      all_files = Myreplicator::Loader.metadata_files
 
       all_files.each do |m|
         if m.export_type == "initial"
