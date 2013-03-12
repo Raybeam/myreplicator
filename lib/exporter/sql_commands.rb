@@ -119,6 +119,8 @@ module Myreplicator
     ##
     
     def self.get_outfile_sql options 
+      Kernel.p "===== SELECT * INTO OUTFILE OPTIONS====="
+      Kernel.p options
       sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
       
       sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY '\\n'"
@@ -143,13 +145,17 @@ module Myreplicator
     # Location of the output file needs to have 777 perms
     ##
     def self.mysql_export_outfile *args
+      Kernel.p "===== mysql_export_outfile OPTIONS ====="
+       
       options = args.extract_options!
+      Kernel.p options
       options.reverse_merge! :flags => []
-      db = options[:db]
+      db = options[:source_schema]
 
       # Database host when ssh'ed into the db server
       db_host = "127.0.0.1"
-      
+      Kernel.p "===== mysql_export_outfile ssh_configs ====="
+      Kernel.p ssh_configs(db)
       if !ssh_configs(db)["ssh_db_host"].blank?
         db_host =  ssh_configs(db)["ssh_db_host"]
       elsif !db_configs(db)["host"].blank?

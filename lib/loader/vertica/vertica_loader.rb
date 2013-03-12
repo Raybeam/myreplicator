@@ -4,6 +4,8 @@ module Myreplicator
 
       def create_table *args
         options = args.extract_options!
+        Kernel.p "===== OPTION ====="
+              puts options
         columns = []
         options[:mysql_schema].each(:as => :hash) do |row|
           columns << row
@@ -56,7 +58,7 @@ module Myreplicator
       
       def create_temp_table *args
         options = args.extract_options!
-        temp_table_name = "tmp_#{options[:table_name]}"
+        temp_table_name = "temp_" + options[:table] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
 
         VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
                                      :vertica_db => options[:vertica_db], 
@@ -68,7 +70,10 @@ module Myreplicator
    
       def prepare_options *args
         options = args.extract_options!
-        vertica_options = ActiveRecord::Base.configurations[options[:destination_db]]
+        Kernel.p "===== OPTION  [options[:db]] ====="
+        puts options
+        # How not to hard code the vertica connection config ?
+        vertica_options = ActiveRecord::Base.configurations["vertica"]
 
         options.reverse_merge!(:host => vertica_options["host"],
                               :user => vertica_options["username"],
@@ -80,7 +85,7 @@ module Myreplicator
                               :delimiter => "\\0",
                               :null_value => "NULL",
                               :enclosed => "")
-
+      # working now but should fix this 
         if !vertica_options["vsql"].blank?
           options.reverse_merge!(:vsql => vertica_options["vsql"])
         else
@@ -97,13 +102,15 @@ module Myreplicator
         metadata = options[:metadata]
         Kernel.p "===== metadata ====="
         Kernel.p metadata
-        Kernel.p metadata.export_type
+        Kernel.p options
         #options = {:table => "app_csvs", :destination_schema => "public", :source_schema => "okl_dev"}
         #options = {:table => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
-        schema_check = MysqlExporter.schema_changed?(:table => options[:table_name], 
+        schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
                                                      :source_schema => options[:source_schema])
-        
+        Kernel.p "===== schema_check ====="
+        Kernel.p schema_check
+        Kernel.p schema_check[:mysql_schema]
         #create a temp table
         temp_table = "temp_" + options[:table_name] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
         ops = {:mysql_schema => schema_check[:mysql_schema],
@@ -111,12 +118,14 @@ module Myreplicator
           :vertica_schema => options[:destination_schema],
           :table => options[:table_name],
           :export_id => options[:export_id],
-          :filepath => metadata[:filepath]
+          :filepath => metadata.filepath
         }
+        Kernel.p "===== schema_check[:mysql_schema] ====="
+        Kernel.p ops
         if schema_check[:new]
           create_table(ops)
           #LOAD DATA IN
-          #vertica_copy options
+          vertica_copy options
         elsif schema_check[:changed]
           if metadata.export_type == 'initial'
             Loader.clear_older_files metadat   # clear old incremental files
@@ -125,7 +134,8 @@ module Myreplicator
             Loader.cleanup metadata #Remove incremental file
           end
         else
-          create_temp_table options
+          temp_table = create_temp_table ops
+          options.reverse_merge!(:temp_table => "#{temp_table}")
           vertica_copy options
           vertica_merge options
         end
@@ -235,6 +245,11 @@ module Myreplicator
       end
       
       def get_vsql_merge_command options, keys, none_keys, updated_columns
+        Kernel.p "===== Merge Options ====="
+        Kernel.p options
+        a = prepare_options options
+        Kernel.p a
+        prepared_options = options
         sql = "MERGE INTO "
         sql+= "#{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:table]} target"
         sql+= "USING #{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:temp_table]} source"
