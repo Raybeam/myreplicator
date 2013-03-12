@@ -81,7 +81,7 @@ module Myreplicator
         logs.each do |log|
           begin
             Process.getpgid(log.pid)
-            puts "still running #{filepath}"
+            puts "still running #{log.file}"
             return true
           rescue Errno::ESRCH
             log.mark_dead
