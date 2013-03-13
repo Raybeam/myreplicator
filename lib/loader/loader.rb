@@ -156,6 +156,7 @@ module Myreplicator
     ##
     def self.initial_load metadata
       exp = Export.find(metadata.export_id)
+      Kernel.p "===== unzip ====="
       Loader.unzip(metadata.filename)
       metadata.zipped = false
       
@@ -239,7 +240,7 @@ module Myreplicator
     ##
     def self.cleanup metadata
       puts "Cleaning up..."
-      FileUtils.rm "#{metadata.destination_filepath(tmp_dir)}.json" # json file
+      FileUtils.rm "#{metadata.metadata_filepath(tmp_dir)}.json" # json file
       FileUtils.rm metadata.destination_filepath(tmp_dir) # dump file
     end
 
@@ -283,10 +284,13 @@ module Myreplicator
     ##
     def self.clear_older_files metadata
       files = Loader.metadata_files
-      max_date = DateTime.strptime metadata.export_finished_at
+      Kernel.p "===== clear old files ====="
+      Kernel.p metadata
+      Kernel.p files
+      max_date = DateTime.strptime metadata.export_time
       files.each do |m|
         if metadata.export_id == m.export_id
-          if max_date > DateTime.strptime(m.export_finished_at)
+          if max_date > DateTime.strptime(m.export_time)
             Loader.cleanup m if metadata.filepath != m.filepath
           end 
         end

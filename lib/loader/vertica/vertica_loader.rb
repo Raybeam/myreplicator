@@ -48,7 +48,7 @@ module Myreplicator
         
         vertica_copy new_options
         
-        sql = "DROP TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
+        sql = "DROP TABLE IF EXISTS #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
         VerticaDb::Base.connection.execute sql
         #rename
         sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
@@ -128,16 +128,24 @@ module Myreplicator
           vertica_copy options
         elsif schema_check[:changed]
           if metadata.export_type == 'initial'
-            Loader.clear_older_files metadat   # clear old incremental files
+            Loader.clear_older_files metadata  # clear old incremental files
             apply_schema_change(ops, temp_table)
           else
             Loader.cleanup metadata #Remove incremental file
           end
         else
           temp_table = create_temp_table ops
-          options.reverse_merge!(:temp_table => "#{temp_table}")
+          options[:table] = temp_table
+          Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="
           vertica_copy options
+          options.reverse_merge!(:temp_table => "#{temp_table}")
+          options[:table] = options[:table_name]
+          Kernel.p "===== MERGE ====="
           vertica_merge options
+          #drop the temp table
+          Kernel.p "===== DROP TEMP TABLE ====="
+          sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
+          VerticaDb::Base.connection.execute sql
         end
       end
       
@@ -244,15 +252,15 @@ module Myreplicator
         return result
       end
       
-      def get_vsql_merge_command options, keys, none_keys, updated_columns
+      def get_vsql_merge_command options, keys, none_keys, inserted_columns
         Kernel.p "===== Merge Options ====="
         Kernel.p options
         a = prepare_options options
         Kernel.p a
         prepared_options = options
         sql = "MERGE INTO "
-        sql+= "#{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:table]} target"
-        sql+= "USING #{prepared_options[:db]}#{prepared_options[:schema]}.#{prepared_options[:temp_table]} source"
+        sql+= "#{prepared_options[:db]}.#{prepared_options[:schema]}.#{prepared_options[:table]} target "
+        sql+= "USING #{prepared_options[:db]}.#{prepared_options[:schema]}.#{prepared_options[:temp_table]} source "
         sql+= "ON "
         count = 0
         keys.each do |k|
@@ -268,38 +276,43 @@ module Myreplicator
         count = 1
         none_keys.each do |nk|
           if count < none_keys.size
-            sql+= "#{nk} = sources.#{nk}, "
+            sql+= "#{nk} = source.#{nk}, "
           else
-            sql+= "#{nk} = sources.#{nk} "
+            sql+= "#{nk} = source.#{nk} "
           end
           count += 1
         end
         sql+= "WHEN NOT MATCHED THEN "
-        sql+= "INSERT ("
+        sql+= "INSERT "
+        #count = 1
+        #inserted_columns.each do |col|
+        #  if count < inserted_columns.size
+        #    sql+= "#{col}, "
+        #  else
+        #    sql+= "#{col} "
+        #  end
+        #  count += 1
+        #end
         count = 1
+        sql+= " VALUES ("
         inserted_columns.each do |col|
           if count < inserted_columns.size
-            sql+= "#{col}, "
+            sql+= "source.#{col}, "
           else
-            sql+= "#{col} "
-          end
-          count += 1
-        end
-        sql +=
-        sql+= ") VALUES ("
-        inserted_columns.each do |col|
-          if count < inserted_columns.size
-            sql+= "sources.#{col}, "
-          else
-            sql+= "sources.#{col} "
+            sql+= "source.#{col}) "
           end
           count += 1
         end  
-        sql+= ";"      
+        sql+= ";"  
+        cmd = "#{prepared_options[:vsql]} -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
+        return cmd    
       end
         
       def vertica_merge *args
         options = args.extract_options!
+        metadata = options[:metadata]
+        Kernel.p "===== MERGE metadata ====="
+        Kernel.p metadata
         ops = {:table => options[:table_name], 
         :destination_schema => options[:destination_schema], 
         :source_schema => options[:source_schema]}
@@ -313,8 +326,24 @@ module Myreplicator
         # get the column to put in the insert part
         inserted_columns = get_mysql_inserted_columns mysql_schema_simple_form
         #get the vsql merge command 
-        sql = get_vsql_merge_command options, keys, none_keys, inserted_columns 
-        #execute        
+        cmd = get_vsql_merge_command options, keys, none_keys, inserted_columns 
+        #execute    
+        puts cmd
+        begin
+          result = `#{cmd} 2>&1`
+          if result[0..4] == "ERROR"
+            Loader.cleanup metadata
+            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} CASCADE;"
+            Kernel.p "===== DROP CMD ====="
+            Kernel.p sql
+            VerticaDb::Base.connection.execute sql
+            raise result
+          end
+        rescue Exception => e
+          raise e.message 
+        ensure
+          # place holder
+        end
       end
 
       # def create_all_tables db

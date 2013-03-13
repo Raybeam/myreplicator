@@ -117,6 +117,7 @@ module Myreplicator
         end
 
         options = {
+          :db => @export_obj.source_schema,
           :source_schema => @export_obj.source_schema,
           :table => @export_obj.table_name,
           :filepath => filepath,

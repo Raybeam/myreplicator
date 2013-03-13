@@ -39,6 +39,10 @@ module Myreplicator
       name = zipped ? "#{name}.gz" : name
       return name     
     end
+    
+    def metadata_filepath tmp_dir
+      File.join(tmp_dir, filepath.split("/").last)
+    end
 
     def destination_filepath tmp_dir
       File.join(tmp_dir, filename)
