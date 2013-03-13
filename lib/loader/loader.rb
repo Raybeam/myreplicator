@@ -240,7 +240,7 @@ module Myreplicator
     ##
     def self.cleanup metadata
       puts "Cleaning up..."
-      FileUtils.rm "#{metadata.metadata_filepath(tmp_dir)}" # json file
+      FileUtils.rm metadata.metadata_filepath(tmp_dir) # json file
       FileUtils.rm metadata.destination_filepath(tmp_dir) # dump file
     end
 
