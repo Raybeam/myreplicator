@@ -34,6 +34,8 @@ module Myreplicator
       ##
       # rasing a concern: using the same schema or the tmp schema for the tmp table? Vertica doesn't lock the schema
       def apply_schema_change options, temp_table
+        Kernel.p "+++++++++++++++++ options "
+        puts options
         VerticaLoader.create_table({:mysql_schema => options[:mysql_schema],
                                      :vertica_db => options[:vertica_db], 
                                      :vertica_schema => options[:vertica_schema],
@@ -46,7 +48,11 @@ module Myreplicator
         new_options[:table] = temp_table
         new_options[:schema] = options[:vertica_schema]
         
+         
         vertica_copy new_options
+        Kernel.p "+++++++++++++++++ new_options "
+        puts new_options
+        puts options
         
         sql = "DROP TABLE IF EXISTS #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
         VerticaDb::Base.connection.execute sql
@@ -69,7 +75,7 @@ module Myreplicator
       end
    
       def prepare_options *args
-        options = args.extract_options!
+        options = args.extract_options!.clone
         Kernel.p "===== OPTION  [options[:db]] ====="
         puts options
         # How not to hard code the vertica connection config ?
@@ -118,7 +124,7 @@ module Myreplicator
           :vertica_schema => options[:destination_schema],
           :table => options[:table_name],
           :export_id => options[:export_id],
-          :filepath => metadata.filepath
+          :filepath => options[:filepath]
         }
         Kernel.p "===== schema_check[:mysql_schema] ====="
         Kernel.p ops
