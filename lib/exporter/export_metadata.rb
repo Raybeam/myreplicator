@@ -42,7 +42,7 @@ module Myreplicator
     
     def metadata_filename
       name = filepath.split("/").last
-      name += "#{name}.json"
+      name += ".json"
       return name
     end
 
