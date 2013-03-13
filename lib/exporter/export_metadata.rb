@@ -40,8 +40,14 @@ module Myreplicator
       return name     
     end
     
+    def metadata_filename
+      name = filepath.split("/").last
+      name += "#{name}.json"
+      return name
+    end
+
     def metadata_filepath tmp_dir
-      File.join(tmp_dir, filepath.split("/").last)
+      File.join(tmp_dir, metadata_filename)
     end
 
     def destination_filepath tmp_dir
