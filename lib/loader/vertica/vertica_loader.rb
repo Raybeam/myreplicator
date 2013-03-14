@@ -41,7 +41,7 @@ module Myreplicator
                                      :vertica_schema => options[:vertica_schema],
                                      :table => temp_table,
                                      :mysql_table => options[:table]})
-
+        table = options[:table]
         export_id = options[:export_id]
         new_options = prepare_options options
         new_options[:file] = options[:filepath]
@@ -50,13 +50,15 @@ module Myreplicator
         
          
         vertica_copy new_options
+        
         Kernel.p "+++++++++++++++++ new_options "
         puts new_options
+        options[:table] = table
         puts options
-        
+        # drop the old table
         sql = "DROP TABLE IF EXISTS #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
         VerticaDb::Base.connection.execute sql
-        #rename
+        # rename
         sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
         VerticaDb::Base.connection.execute sql
 
@@ -75,7 +77,8 @@ module Myreplicator
       end
    
       def prepare_options *args
-        options = args.extract_options!.clone
+        #options = args.extract_options!.clone
+        options = args.extract_options!
         Kernel.p "===== OPTION  [options[:db]] ====="
         puts options
         # How not to hard code the vertica connection config ?

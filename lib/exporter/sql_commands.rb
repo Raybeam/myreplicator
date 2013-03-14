@@ -127,7 +127,7 @@ module Myreplicator
       
       sql += "FROM #{options[:db]}.#{options[:table]} "
 
-      if options[:incremental_col] && !options[:incremental_val].blank?
+      if !options[:incremental_col].blank? && !options[:incremental_val].blank?
         if options[:incremental_col_type] == "datetime"
           sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
         else
