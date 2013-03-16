@@ -175,14 +175,15 @@ module Myreplicator
       cmd = Myreplicator.mysql
       cmd += "#{flags} "
       
+      cmd += "-u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
+      
       if db_configs(db).has_key? "socket"
         cmd += "--socket=#{db_configs(db)["socket"]} " 
       else
-        cmd += "-u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} " 
+        cmd += "-h#{db_host} " 
+        cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
       end
       
-      cmd += "-h#{db_host} " 
-      cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
       cmd += "--execute=\"#{get_outfile_sql(options)}\" "
       
       puts cmd
