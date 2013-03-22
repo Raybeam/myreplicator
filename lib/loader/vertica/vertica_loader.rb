@@ -192,8 +192,10 @@ module Myreplicator
         options[:file].blank? ? return : file = options[:file]
         options[:list_of_nulls].blank? ? list_of_nulls = [] : list_of_nulls = options[:list_of_nulls]
         options[:null_value].blank? ? null_value = "NULL" : null_value = options[:null_value]
-        
+        Kernel.p "===== file #{file}====="
         file_extension = file.split('.').last
+        Kernel.p "===== file_extension #{file_extension}====="
+        
         case file_extension
         when "tsv", "csv"
           process_flat_file(file, list_of_nulls, null_value)
@@ -207,12 +209,13 @@ module Myreplicator
       def replace_null(file, list_of_nulls, null_value = "NULL")
         list_of_nulls.each do | value|
           # special case for NULL MySQL datetime/date type but the column is defined NOT NULL
+          extension = file.split('.').last
           if value == '0000-00-00'
-            cmd1 = "sed -i 's/#{value}/1900-01-01/g' #{file}"
+            cmd1 = "sed -i .#{extension} 's/#{value}/1900-01-01/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           else
-            cmd1 = "sed -i 's/#{value}/#{null_value}/g' #{file}"
+            cmd1 = "sed -i .#{extension} 's/#{value}/#{null_value}/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           end
@@ -226,13 +229,16 @@ module Myreplicator
       
       def process_gzip_file file, list_of_nulls, null_value
         # unzip
-        cmd = "gunzip -f #{file} -c > tmp/temp.txt"
+        temp_file = "tmp/temp_#{file.split('.').first.split('/').last}.txt"
+        cmd = "gunzip -f #{file} -c > #{temp_file}"
         system(cmd)
         # sed
-        replace_null(file, list_of_nulls, null_value)
+        replace_null("#{temp_file}", list_of_nulls, null_value)
         # zip
-        cmd2 = "gzip tmp/temp.txt -c > #{file}"
+        cmd2 = "gzip #{temp_file} -c > #{file}"
         system(cmd2)
+        cmd3 = "rm #{temp_file}"
+        system(cmd3)
       end
 
       def get_mysql_keys mysql_schema_simple_form
