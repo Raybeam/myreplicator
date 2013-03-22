@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    myreplicator (1.1.14)
+    myreplicator (1.1.15)
       json
       mysql2
       net-sftp

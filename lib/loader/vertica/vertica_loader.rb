@@ -211,11 +211,11 @@ module Myreplicator
           # special case for NULL MySQL datetime/date type but the column is defined NOT NULL
           extension = file.split('.').last
           if value == '0000-00-00'
-            cmd1 = "sed -i .#{extension} 's/#{value}/1900-01-01/g' #{file}"
+            cmd1 = "sed -i .dat 's/#{value}/1900-01-01/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           else
-            cmd1 = "sed -i .#{extension} 's/#{value}/#{null_value}/g' #{file}"
+            cmd1 = "sed -i .dat 's/#{value}/#{null_value}/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           end
@@ -230,14 +230,23 @@ module Myreplicator
       def process_gzip_file file, list_of_nulls, null_value
         # unzip
         temp_file = "tmp/temp_#{file.split('.').first.split('/').last}.txt"
+        
         cmd = "gunzip -f #{file} -c > #{temp_file}"
         system(cmd)
         # sed
         replace_null("#{temp_file}", list_of_nulls, null_value)
         # zip
+        cmd4 = "cp #{temp_file}.dat #{temp_file}"
+        Kernel.p cmd4
+        system(cmd4)
         cmd2 = "gzip #{temp_file} -c > #{file}"
+        Kernel.p cmd2
         system(cmd2)
+        cmd5 = "rm #{temp_file}.dat"
+        Kernel.p cmd5
+        system(cmd5)
         cmd3 = "rm #{temp_file}"
+        Kernel.p cmd3
         system(cmd3)
       end
 
