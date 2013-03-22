@@ -39,8 +39,9 @@ module Myreplicator
     # downloads export files concurrently from multiple sources
     ##
     def self.transfer
-      unique_jobs = Export.where("active = 1").group("source_schema")
-
+      unique_jobs = Export.where("active = 1 and state = 'export_completed'").group("source_schema")
+      Kernel.p "===== unique_jobs ====="
+      Kernel.p unique_jobs 
       unique_jobs.each do |export|
         download export
       end
@@ -51,19 +52,20 @@ module Myreplicator
     # Kicks off parallel download
     ##
     def self.download export
-      parallel_download(export, completed_files(export))
+      Kernel.p "===== 1 ====="
+      parallel_download(completed_files(export))
     end
 
     ##
     # Gathers all files that need to be downloaded
     # Gives the queue to parallelizer library to download in parallel
     ##
-    def self.parallel_download export, files    
+    def self.parallel_download files    
       p = Parallelizer.new(:klass => "Myreplicator::Transporter")
-
-      files.each do |filename|
-        puts filename
-        p.queue << {:params =>[export, filename], :block => download_file}
+    
+      files.each do |f|
+        puts f[:file]
+        p.queue << {:params =>[f[:export], f[:file]], :block => download_file}
       end
 
       p.run 
@@ -103,6 +105,7 @@ module Myreplicator
               local_dump_file = File.join(tmp_dir, dump_file.split("/").last)
               sftp.download!(dump_file, local_dump_file)
               Transporter.remove!(export, json_file, dump_file)
+              export.update_attributes!({:state => 'transport_completed'})
               # store back up as well
               unless metadata.store_in.blank?
                 Transporter.backup_files(metadata.backup_path, json_local_path, local_dump_file)
@@ -144,12 +147,30 @@ module Myreplicator
     def self.completed_files export
       ssh = export.ssh_to_source
       done_files = ssh.exec!(get_done_files(export))
-
-      unless done_files.blank?
-        return done_files.split("\n")
+      if done_files.blank?
+        return []
       end
-
-      return []
+      files = done_files.split("\n")
+      jobs = Export.where("active = 1 and state = 'export_completed' and source_schema = '#{export.source_schema}'")
+      #jobs.each do |j|
+      #  j.update_attributes!({:state => "transporting"})
+      #end
+      result = []
+      files.each do |file|
+        flag = nil
+        jobs.each do |job|
+          if file.include?(job.table_name)
+            flag = job 
+            job.update_attributes!({:state => 'transporting'})
+          end
+        end
+        if flag
+          result << {:file => file, :export => flag}
+        end
+      end
+      Kernel.p "===== done_files ====="
+      Kernel.p result
+      return result
     end
 
     def self.metadata_obj json_path
@@ -177,6 +198,8 @@ module Myreplicator
     # Grep -s used to supress error messages
     ## 
     def self.get_done_files export
+      Kernel.p "===== export ====="
+      Kernel.p export
       cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -ls export_completed *.json"
     end
     

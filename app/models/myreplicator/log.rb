@@ -117,10 +117,12 @@ module Myreplicator
     def self.completed? *args
       options = args.extract_options!
       log = Log.where(:export_id => options[:export_id],
-                      :file => options[:export_id],
+                      :file => options[:file],
                       :job_type => options[:job_type]).last
+      Kernel.p "===== transport_complete? log ====="
+      Kernel.p log
       if log.nil?
-        return true
+        return false
       else
         return true if log.state != "running"
       end

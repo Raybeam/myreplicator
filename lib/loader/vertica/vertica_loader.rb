@@ -137,10 +137,12 @@ module Myreplicator
           vertica_copy options
         elsif schema_check[:changed]
           if metadata.export_type == 'initial'
+            Kernel.p "===== schema_check[:changed] ====="
             Loader.clear_older_files metadata  # clear old incremental files
             apply_schema_change(ops, temp_table)
           else
             Loader.cleanup metadata #Remove incremental file
+            Kernel.p "===== Remove incremental file ====="
           end
         else
           temp_table = create_temp_table ops
@@ -354,24 +356,24 @@ module Myreplicator
           # place holder
         end
       end
-
-      # def create_all_tables db
-      #   tables = Loader::SourceDb.get_tables(db)
-      #   sqls = {}
-      #   tables.each do |table|
-      #     puts "Creating #{db}.#{table}"
-      #     sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
-      #     VerticaDb::Base.connection.execute sql
-      #     sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
-      #     :vertica_table => table,
-      #     :vertica_schema => db,
-      #     :table => table,
-      #     :db => db)
-      #     sqls["#{table}"] = sql
-      #     VerticaDb::Base.connection.execute sql
-      #   end
-      # end
-
+=begin
+       def create_all_tables db
+         tables = Myreplicator::DB.get_tables(db)
+         sqls = {}
+         tables.each do |table|
+           puts "Creating #{db}.#{table}"
+           sql = "DROP TABLE IF EXISTS #{db}.#{table} CASCADE;"
+           VerticaDb::Base.connection.execute sql
+           sql = Loader::VerticaLoader.create_table(:vertica_db => "bidw",
+           :vertica_table => table,
+           :vertica_schema => db,
+           :table => table,
+           :db => db)
+           sqls["#{table}"] = sql
+           VerticaDb::Base.connection.execute sql
+         end
+       end
+=end
     end
   end
 end

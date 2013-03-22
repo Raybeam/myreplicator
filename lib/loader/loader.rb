@@ -32,8 +32,12 @@ module Myreplicator
       initials = []
       incrementals = []
       all_files = Myreplicator::Loader.metadata_files
-
+      
+      Kernel.p "===== all_files ====="
+      Kernel.p all_files 
+      
       all_files.each do |m|
+        Kernel.p m
         if m.export_type == "initial"
           initials << m # Add initial to the list
           all_files.delete(m) # Delete obj from mixed list
@@ -156,9 +160,9 @@ module Myreplicator
     ##
     def self.initial_load metadata
       exp = Export.find(metadata.export_id)
-      Kernel.p "===== unzip ====="
-      Loader.unzip(metadata.filename)
-      metadata.zipped = false
+      #Kernel.p "===== unzip ====="
+      #Loader.unzip(metadata.filename)
+      #metadata.zipped = false
       
       cmd = ImportSql.initial_load(:db => exp.destination_schema,
                                    :filepath => metadata.destination_filepath(tmp_dir))      
@@ -178,8 +182,8 @@ module Myreplicator
     ##
     def self.incremental_load metadata
       exp = Export.find(metadata.export_id)
-      Loader.unzip(metadata.filename)
-      metadata.zipped = false
+      #Loader.unzip(metadata.filename)
+      #metadata.zipped = false
       
       options = {:table_name => exp.table_name, 
         :db => exp.destination_schema,
@@ -227,8 +231,12 @@ module Myreplicator
     # being loaded is completed
     ##
     def self.transfer_completed? metadata
+      Kernel.p "===== transfer_completed? metadata ====="
+      Kernel.p ({:export_id => metadata.export_id,
+                              :file => metadata.export_path,
+      :job_type => "transporter"})
       if Log.completed?(:export_id => metadata.export_id,
-                        :file => metadata.destination_filepath(tmp_dir),
+                        :file => metadata.export_path,
                         :job_type => "transporter")
         return true
       end
@@ -274,7 +282,28 @@ module Myreplicator
       Dir.glob(File.join(tmp_dir, "*.json")).each do |json_file|
         files << ExportMetadata.new(:metadata_path => json_file)
       end
-      return files
+      result = []
+      Kernel.p files
+      files.each do |file|
+        puts "<<<<<<<<<<<<<<<<"
+        job = Export.where("id = #{file.export_id}").first
+        puts "<<<<<<<<<<<<<<<<"
+        Kernel.p job
+        puts "<<<<<<<<<<<<<<<<"
+        puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        Kernel.p file
+        puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        if job.state == "transport_completed"
+          result << file
+        end
+        puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        Kernel.p result
+        puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
+      end
+      puts "<<<<<<<<<<<<<<<<"
+      a = gets
+      puts "<<<<<<<<<<<<<<<<"
+      return result
     end
 
     ##
