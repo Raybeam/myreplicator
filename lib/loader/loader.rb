@@ -301,7 +301,7 @@ module Myreplicator
         puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
       end
       puts "<<<<<<<<<<<<<<<<"
-      a = gets
+      
       puts "<<<<<<<<<<<<<<<<"
       return result
     end
