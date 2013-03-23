@@ -153,7 +153,7 @@ module Myreplicator
           options[:table] = options[:table_name]
           Kernel.p "===== MERGE ====="
           vertica_merge options
-          drop the temp table
+          #drop the temp table
           Kernel.p "===== DROP TEMP TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
           VerticaDb::Base.connection.execute sql
