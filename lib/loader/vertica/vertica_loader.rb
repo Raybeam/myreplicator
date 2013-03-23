@@ -154,9 +154,9 @@ module Myreplicator
           Kernel.p "===== MERGE ====="
           vertica_merge options
           #drop the temp table
-          Kernel.p "===== DROP TEMP TABLE ====="
-          sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
-          VerticaDb::Base.connection.execute sql
+          #Kernel.p "===== DROP TEMP TABLE ====="
+          #sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
+          #VerticaDb::Base.connection.execute sql
         end
       end
       
@@ -211,11 +211,11 @@ module Myreplicator
           # special case for NULL MySQL datetime/date type but the column is defined NOT NULL
           extension = file.split('.').last
           if value == '0000-00-00'
-            cmd1 = "sed -i .dat 's/#{value}/1900-01-01/g' #{file}"
+            cmd1 = "sed -i 's/#{value}/1900-01-01/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           else
-            cmd1 = "sed -i .dat 's/#{value}/#{null_value}/g' #{file}"
+            cmd1 = "sed -i 's/#{value}/#{null_value}/g' #{file}"
             Kernel.p cmd1
             system(cmd1)
           end
@@ -232,19 +232,14 @@ module Myreplicator
         temp_file = "tmp/temp_#{file.split('.').first.split('/').last}.txt"
         
         cmd = "gunzip -f #{file} -c > #{temp_file}"
+        Kernel.p cmd
         system(cmd)
         # sed
         replace_null("#{temp_file}", list_of_nulls, null_value)
         # zip
-        cmd4 = "cp #{temp_file}.dat #{temp_file}"
-        Kernel.p cmd4
-        system(cmd4)
         cmd2 = "gzip #{temp_file} -c > #{file}"
         Kernel.p cmd2
         system(cmd2)
-        cmd5 = "rm #{temp_file}.dat"
-        Kernel.p cmd5
-        system(cmd5)
         cmd3 = "rm #{temp_file}"
         Kernel.p cmd3
         system(cmd3)
@@ -329,7 +324,7 @@ module Myreplicator
           end
           count += 1
         end  
-        sql+= ";"  
+        sql+= "; COMMIT;"  
         cmd = "#{prepared_options[:vsql]} -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
         return cmd    
       end

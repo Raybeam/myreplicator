@@ -293,9 +293,9 @@ module Myreplicator
         puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
         Kernel.p file
         puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        if job.state == "transport_completed"
+        #if job.state == "transport_completed"
           result << file
-        end
+        #end
         puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
         Kernel.p result
         puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"

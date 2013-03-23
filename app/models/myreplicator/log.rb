@@ -124,7 +124,7 @@ module Myreplicator
       if log.nil?
         return false
       else
-        return true if log.state != "running"
+        return true if log.state == "completed"
       end
       
       return false

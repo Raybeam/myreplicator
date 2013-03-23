@@ -39,7 +39,7 @@ module Myreplicator
     # downloads export files concurrently from multiple sources
     ##
     def self.transfer
-      unique_jobs = Export.where("active = 1 and state = 'export_completed'").group("source_schema")
+      unique_jobs = Export.where("active = 1").group("source_schema")
       Kernel.p "===== unique_jobs ====="
       Kernel.p unique_jobs 
       unique_jobs.each do |export|
@@ -105,7 +105,7 @@ module Myreplicator
               local_dump_file = File.join(tmp_dir, dump_file.split("/").last)
               sftp.download!(dump_file, local_dump_file)
               Transporter.remove!(export, json_file, dump_file)
-              export.update_attributes!({:state => 'transport_completed'})
+              #export.update_attributes!({:state => 'transport_completed'})
               # store back up as well
               unless metadata.store_in.blank?
                 Transporter.backup_files(metadata.backup_path, json_local_path, local_dump_file)
@@ -151,7 +151,8 @@ module Myreplicator
         return []
       end
       files = done_files.split("\n")
-      jobs = Export.where("active = 1 and state = 'export_completed' and source_schema = '#{export.source_schema}'")
+      
+      jobs = Export.where("active = 1 and source_schema = '#{export.source_schema}'")
       #jobs.each do |j|
       #  j.update_attributes!({:state => "transporting"})
       #end
@@ -161,7 +162,7 @@ module Myreplicator
         jobs.each do |job|
           if file.include?(job.table_name)
             flag = job 
-            job.update_attributes!({:state => 'transporting'})
+            #job.update_attributes!({:state => 'transporting'})
           end
         end
         if flag
@@ -171,6 +172,10 @@ module Myreplicator
       Kernel.p "===== done_files ====="
       Kernel.p result
       return result
+
+      #Kernel.p "===== done_files ====="
+      #Kernel.p files
+      #return files
     end
 
     def self.metadata_obj json_path

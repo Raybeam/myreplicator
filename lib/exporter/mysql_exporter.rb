@@ -281,11 +281,11 @@ module Myreplicator
 
     def on_export_success metadata
       metadata.on_success do |m|
+        zipfile(metadata)
         update_export(:state => "export_completed", 
                       :export_finished_at => Time.now, 
                       :error => metadata.error)
         metadata.state = "export_completed"
-        zipfile(metadata)
       end
     end
     
