@@ -91,7 +91,30 @@ module Myreplicator
       
       return false
     end
+    
+    ##
+    # Clear all logs marked running that have run for more than 2 hours
+    ##
+    def self.clear_stucks
+      runnings = Log.where(:state => "running")
+      news = Log.where(:state => "new")
+      logs = runnings + news
+      
+      if logs.count > 0
+        logs.each do |log|
+          time_start = log.started_at
+          now = Time.now()
+          if time_start + 2.hour < now
+            Process.kill('KILL', log.pid)
+            log.state = "killed"
+            log.save!
+          end
+        end
+      end
+      
+    end
 
+    
     ##
     # Clear all logs marked running that are not running
     ##
@@ -101,7 +124,7 @@ module Myreplicator
       if logs.count > 0
         logs.each do |log|
           begin
-            Process.getpgid(log.pid) if hostname == Socket.gethostname
+            Process.getpgid(log.pid) if log.hostname == Socket.gethostname
           rescue Errno::ESRCH
             log.mark_dead
           end

@@ -112,7 +112,7 @@ module Myreplicator
               end
             end
           end #if
-          puts "#{Thread.current.to_s}___Exiting download..."
+          #puts "#{Thread.current.to_s}___Exiting download..."
         end
       }
     end
