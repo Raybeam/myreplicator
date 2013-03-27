@@ -1,5 +1,3 @@
-require "log"
-
 module Myreplicator
   class Sweeper
    
