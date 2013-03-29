@@ -58,7 +58,7 @@ module Myreplicator
     def kill
       return false unless hostname == Socket.gethostname
       begin
-        Process.kill('TERM', pid)
+        Process.kill('KILL', pid)
         self.state = "killed"
         self.save!
       rescue Errno::ESRCH
@@ -102,12 +102,18 @@ module Myreplicator
       
       if logs.count > 0
         logs.each do |log|
+          
           time_start = log.started_at
           now = Time.now()
           if time_start + 2.hour < now
-            Process.kill('KILL', log.pid)
-            log.state = "killed"
-            log.save!
+            begin
+              Process.kill('KILL', log.pid)
+              log.state = "killed"
+              log.save!
+            rescue Errno::ESRCH
+              log.state = "dead"
+              log.save!
+            end  
           end
         end
       end
