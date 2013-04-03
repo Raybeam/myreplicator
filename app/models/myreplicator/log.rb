@@ -148,10 +148,11 @@ module Myreplicator
       log = Log.where(:export_id => options[:export_id],
                       :file => options[:file],
                       :job_type => options[:job_type]).last
-      Kernel.p "===== transport_complete? log ====="
-      Kernel.p log
+      #Kernel.p "===== transport_complete? log ====="
+      #Kernel.p log
       if log.nil?
-        return false
+        #return false
+        return true
       else
         return true if log.state == "completed"
       end

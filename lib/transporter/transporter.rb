@@ -52,8 +52,45 @@ module Myreplicator
     # Kicks off parallel download
     ##
     def self.download export
-      Kernel.p "===== 1 ====="
-      parallel_download(completed_files(export))
+      #Kernel.p "===== 1 ====="
+      #parallel_download(completed_files(export))
+      files = completed_files(export)
+      files.each do |f|
+        export = f[:export]
+        filename = f[:file]
+        ActiveRecord::Base.verify_active_connections!
+             ActiveRecord::Base.connection.reconnect!
+     
+             Log.run(:job_type => "transporter", :name => "metadata_file", 
+                     :file => filename, :export_id => export.id ) do |log|
+     
+               sftp = export.sftp_to_source
+               json_file = Transporter.remote_path(export, filename) 
+               json_local_path = File.join(tmp_dir,filename)
+               puts "Downloading #{json_file}"
+               sftp.download!(json_file, json_local_path)
+               metadata = Transporter.metadata_obj(json_local_path)
+               dump_file = metadata.export_path
+               puts metadata.state
+               if metadata.state == "export_completed"
+                 Log.run(:job_type => "transporter", :name => "export_file",
+                         :file => dump_file, :export_id => export.id) do |log|
+                   puts "Downloading #{dump_file}"
+                   local_dump_file = File.join(tmp_dir, dump_file.split("/").last)
+                   sftp.download!(dump_file, local_dump_file)
+                   Transporter.remove!(export, json_file, dump_file)
+                   #export.update_attributes!({:state => 'transport_completed'})
+                   # store back up as well
+                   unless metadata.store_in.blank?
+                     Transporter.backup_files(metadata.backup_path, json_local_path, local_dump_file)
+                   end
+                 end
+               else
+                 # TO DO: remove metadata file of failed export
+                 Transporter.remove!(export, json_file, "")
+               end #if
+             end
+      end
     end
 
     ##

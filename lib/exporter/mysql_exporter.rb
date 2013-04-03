@@ -134,8 +134,8 @@ module Myreplicator
           options[:incremental_val] = @export_obj.max_incremental_value
         end
 
-        Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
-        Kernel.p options
+        #Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
+        #Kernel.p options
         cmd = SqlCommands.mysql_export_outfile(options)      
         exporting_state_trans
         puts "Exporting..."
@@ -152,8 +152,8 @@ module Myreplicator
     end
 
     def self.compare_schemas vertica_schema, mysql_schema
-      Kernel.p vertica_schema
-      Kernel.p mysql_schema
+      #Kernel.p vertica_schema
+      #Kernel.p mysql_schema
       if vertica_schema.size != mysql_schema.size
         return true
       else
@@ -196,8 +196,8 @@ module Myreplicator
     end
 
     def self.schema_changed? options
-      Kernel.p "===== schema_changed? ====="
-      puts options
+      #Kernel.p "===== schema_changed? ====="
+      #puts options
       mysql_schema = Loader.mysql_table_definition(options)
       vertica_schema = VerticaLoader.destination_table_vertica(options)
 
@@ -205,19 +205,16 @@ module Myreplicator
       unless vertica_schema.size > 0 
         return {:changed => true, :mysql_schema => mysql_schema, :new => true}
       end
-      Kernel.p "***** 1 *****"
       # compare two schemas
       
       
       mysql_schema_2 = get_mysql_schema_rows mysql_schema
       if compare_schemas(vertica_schema, mysql_schema_2)
-        Kernel.p "***** 2 *****"
         result =  {:changed => true, :mysql_schema => mysql_schema, :vertica_schema => vertica_schema,:new => false}
       else
-        Kernel.p "***** 3 *****"
         result =  {:changed => false, :mysql_schema => mysql_schema}
       end
-      Kernel.p result
+      #Kernel.p result
       return result
     end
 

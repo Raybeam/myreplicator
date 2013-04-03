@@ -33,11 +33,11 @@ module Myreplicator
       incrementals = []
       all_files = Myreplicator::Loader.metadata_files
       
-      Kernel.p "===== all_files ====="
-      Kernel.p all_files 
+      #Kernel.p "===== all_files ====="
+      #Kernel.p all_files 
       
       all_files.each do |m|
-        Kernel.p m
+        #Kernel.p m
         if m.export_type == "initial"
           initials << m # Add initial to the list
           all_files.delete(m) # Delete obj from mixed list
@@ -53,11 +53,42 @@ module Myreplicator
       
       incrementals = all_files # Remaining are all incrementals
       
-      initial_procs = Loader.initial_loads initials
-      parallel_load initial_procs
-
-      incremental_procs = Loader.incremental_loads incrementals
-      parallel_load incremental_procs
+      #initial_procs = Loader.initial_loads initials
+      #parallel_load initial_procs
+      initials.each do |metadata|
+        Myreplicator::Log.run(:job_type => "loader", 
+        :name => "#{metadata.export_type}_import",
+        :file => metadata.filename,
+        :export_id => metadata.export_id) do |log|
+          if Myreplicator::Loader.transfer_completed? metadata
+            if metadata.export_to == "vertica"
+              Myreplicator::Loader.incremental_load metadata
+            else
+              Myreplicator::Loader.initial_load metadata
+            end
+            Myreplicator::Loader.cleanup metadata
+          end
+        end
+      end
+      
+      #incremental_procs = Loader.incremental_loads incrementals
+      #parallel_load incremental_procs
+      #groups = Myreplicator::Loader.group_incrementals incrementals
+      #groups.each do |group|
+      incrementals.each do |metadata|
+        Myreplicator::Log.run(:job_type => "loader",
+        :name => "incremental_import",
+        :file => metadata.filename,
+        :export_id => metadata.export_id) do |log|
+          if Myreplicator::Loader.transfer_completed? metadata
+            Myreplicator::Loader.incremental_load metadata
+            Myreplicator::Loader.cleanup metadata
+          end
+        end
+      end
+       #   end # group
+      #end # groups
+         
     end
     
     def self.parallel_load procs
@@ -78,18 +109,18 @@ module Myreplicator
 
       initials.each do |metadata| 
         procs << Proc.new {
-          Log.run(:job_type => "loader", 
+          Myreplicator::Log.run(:job_type => "loader", 
                   :name => "#{metadata.export_type}_import", 
                   :file => metadata.filename, 
                   :export_id => metadata.export_id) do |log|
 
-            if Loader.transfer_completed? metadata
+            if Myreplicator::Loader.transfer_completed? metadata
               if metadata.export_to == "vertica"
-                Loader.incremental_load metadata
+                Myreplicator::Loader.incremental_load metadata
               else
-                Loader.initial_load metadata
+                Myreplicator::Loader.initial_load metadata
               end
-              Loader.cleanup metadata
+              Myreplicator::Loader.cleanup metadata
             end
 
           end
@@ -110,14 +141,14 @@ module Myreplicator
       groups.each do |group|
         procs << Proc.new {
           group.each do |metadata|
-            Log.run(:job_type => "loader", 
+            Myreplicator::Log.run(:job_type => "loader", 
                     :name => "incremental_import", 
                     :file => metadata.filename, 
                     :export_id => metadata.export_id) do |log|
     
-              if Loader.transfer_completed? metadata            
-                Loader.incremental_load metadata
-                Loader.cleanup metadata
+              if Myreplicator::Loader.transfer_completed? metadata            
+                Myreplicator::Loader.incremental_load metadata
+                Myreplicator::Loader.cleanup metadata
               end
 
             end
@@ -231,10 +262,10 @@ module Myreplicator
     # being loaded is completed
     ##
     def self.transfer_completed? metadata
-      Kernel.p "===== transfer_completed? metadata ====="
-      Kernel.p ({:export_id => metadata.export_id,
-                              :file => metadata.export_path,
-      :job_type => "transporter"})
+      #Kernel.p "===== transfer_completed? metadata ====="
+      #Kernel.p ({:export_id => metadata.export_id,
+      #                        :file => metadata.export_path,
+      #:job_type => "transporter"})
       if Log.completed?(:export_id => metadata.export_id,
                         :file => metadata.export_path,
                         :job_type => "transporter")
@@ -283,26 +314,26 @@ module Myreplicator
         files << ExportMetadata.new(:metadata_path => json_file)
       end
       result = []
-      Kernel.p files
+      #Kernel.p files
       files.each do |file|
-        puts "<<<<<<<<<<<<<<<<"
+        #puts "<<<<<<<<<<<<<<<<"
         job = Export.where("id = #{file.export_id}").first
-        puts "<<<<<<<<<<<<<<<<"
-        Kernel.p job
-        puts "<<<<<<<<<<<<<<<<"
-        puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        Kernel.p file
-        puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        #puts "<<<<<<<<<<<<<<<<"
+        #Kernel.p job
+        #puts "<<<<<<<<<<<<<<<<"
+        #puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        #Kernel.p file
+        #puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
         #if job.state == "transport_completed"
-          result << file
+        result << file
         #end
-        puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        Kernel.p result
-        puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        #puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
+        #Kernel.p result
+        #puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
       end
-      puts "<<<<<<<<<<<<<<<<"
+      #puts "<<<<<<<<<<<<<<<<"
       
-      puts "<<<<<<<<<<<<<<<<"
+      #puts "<<<<<<<<<<<<<<<<"
       return result
     end
 
@@ -313,9 +344,9 @@ module Myreplicator
     ##
     def self.clear_older_files metadata
       files = Loader.metadata_files
-      Kernel.p "===== clear old files ====="
-      Kernel.p metadata
-      Kernel.p files
+      #Kernel.p "===== clear old files ====="
+      #Kernel.p metadata
+      #Kernel.p files
       max_date = DateTime.strptime metadata.export_time
       files.each do |m|
         if metadata.export_id == m.export_id
