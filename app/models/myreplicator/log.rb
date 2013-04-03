@@ -151,8 +151,8 @@ module Myreplicator
       #Kernel.p "===== transport_complete? log ====="
       #Kernel.p log
       if log.nil?
-        #return false
-        return true
+        return false
+        #return true
       else
         return true if log.state == "completed"
       end
