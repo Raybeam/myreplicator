@@ -1,7 +1,7 @@
 module Myreplicator
   class VerticaLoader
     class << self
-
+      
       def create_table *args
         options = args.extract_options!
         Kernel.p "===== OPTION ====="
@@ -14,7 +14,8 @@ module Myreplicator
 
         sql = Myreplicator::VerticaSql.create_table_stmt options
         puts sql
-        VerticaDb::Base.connection.execute sql
+        #VerticaDb::Base.connection.execute sql
+        Myreplicator::DB.exec_sql("vertica",sql)
       end
 
       def destination_table_vertica options
@@ -57,11 +58,12 @@ module Myreplicator
         puts options
         # drop the old table
         sql = "DROP TABLE IF EXISTS #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
-        VerticaDb::Base.connection.execute sql
+        #VerticaDb::Base.connection.execute sql
+        Myreplicator::DB.exec_sql("vertica",sql)
         # rename
         sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
-        VerticaDb::Base.connection.execute sql
-
+        #VerticaDb::Base.connection.execute sql
+        Myreplicator::DB.exec_sql("vertica",sql)
       end
       
       def create_temp_table *args
@@ -156,7 +158,8 @@ module Myreplicator
           #drop the temp table
           Kernel.p "===== DROP TEMP TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
-          VerticaDb::Base.connection.execute sql
+          #VerticaDb::Base.connection.execute sql
+          Myreplicator::DB.exec_sql("vertica",sql)
         end
       end
       
@@ -178,10 +181,13 @@ module Myreplicator
       end
         
       def get_vsql_copy_command prepared_options
+        Kernel.p "===== get_vsql_copy_command prepared_options ====="
+        Kernel.p prepared_options
         file_extension = prepared_options[:file].split('.').last
         file_handler = ""
         file_handler = "GZIP" if file_extension == "gz" 
-        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY \'#{prepared_options[:enclosed]}\' EXCEPTIONS 'load_exceptions.log';"
+        tmp_dir = Myreplicator.tmp_path
+        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY \'#{prepared_options[:enclosed]}\' EXCEPTIONS '#{tmp_dir}/load_logs/#{prepared_options[:schema]}_#{prepared_options[:table_name]}.log';"
         cmd = "#{prepared_options[:vsql]} -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
         return cmd
       end
@@ -229,8 +235,8 @@ module Myreplicator
       
       def process_gzip_file file, list_of_nulls, null_value
         # unzip
-        temp_file = "tmp/temp_#{file.split('.').first.split('/').last}.txt"
-        
+        tmp_dir = Myreplicator.tmp_path
+        temp_file = "#{tmp_dir}/temp_#{file.split('.').first.split('/').last}.txt"
         cmd = "gunzip -f #{file} -c > #{temp_file}"
         Kernel.p cmd
         system(cmd)
@@ -357,7 +363,8 @@ module Myreplicator
             sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} CASCADE;"
             Kernel.p "===== DROP CMD ====="
             Kernel.p sql
-            VerticaDb::Base.connection.execute sql
+            #VerticaDb::Base.connection.execute sql
+            Myreplicator::DB.exec_sql("vertica",sql)
             raise result
           end
         rescue Exception => e

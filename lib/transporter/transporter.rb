@@ -10,7 +10,8 @@ module Myreplicator
     end
 
     def tmp_dir
-      @tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      #@tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      @tmp_dir ||= Myreplicator.tmp_path
       Dir.mkdir(@tmp_dir) unless File.directory?(@tmp_dir)
       @tmp_dir
     end
@@ -54,7 +55,7 @@ module Myreplicator
     def self.download export
       #Kernel.p "===== 1 ====="
       #parallel_download(completed_files(export))
-      tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      tmp_dir ||= Myreplicator.tmp_path
       Dir.mkdir(tmp_dir) unless File.directory?(tmp_dir)
       files = completed_files(export)
       files.each do |f|

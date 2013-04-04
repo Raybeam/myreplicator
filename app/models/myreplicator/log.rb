@@ -30,7 +30,7 @@ module Myreplicator
 
       log = Log.create options
 
-      unless log.running?
+      if  !log.running?
         begin
           log.state = "running"
           log.save!
@@ -43,6 +43,17 @@ module Myreplicator
           log.error = e.message
           log.backtrace =  e.backtrace
 
+        ensure
+          log.finished_at = Time.now
+          log.save!
+        end
+      else
+        begin
+          log.state = "ignored"
+        rescue Exception => e
+          log.state = "error"
+          log.error = e.message
+          log.backtrace =  e.backtrace
         ensure
           log.finished_at = Time.now
           log.save!
@@ -151,8 +162,9 @@ module Myreplicator
       #Kernel.p "===== transport_complete? log ====="
       #Kernel.p log
       if log.nil?
-        return false
-        #return true
+        #return false
+        # Bug: no log of tranporter job. Using return true for now
+        return true
       else
         return true if log.state == "completed"
       end

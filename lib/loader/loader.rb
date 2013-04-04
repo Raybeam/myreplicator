@@ -10,7 +10,8 @@ module Myreplicator
     end
     
     def self.tmp_dir
-      @tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      #@tmp_dir ||= File.join(Myreplicator.app_root,"tmp", "myreplicator")
+      @tmp_dir ||= Myreplicator.tmp_path
     end
 
     ##
@@ -311,7 +312,7 @@ module Myreplicator
     def self.metadata_files
       files = []
       Dir.glob(File.join(tmp_dir, "*.json")).each do |json_file|
-        files << ExportMetadata.new(:metadata_path => json_file)
+        files << Myreplicator::ExportMetadata.new(:metadata_path => json_file)
       end
       result = []
       #Kernel.p files

@@ -85,7 +85,37 @@ module Myreplicator
     def filename
       @file_name ||= "#{source_schema}_#{table_name}_#{Time.now.to_i}.tsv"
     end
-
+    
+    def destination_max_incremental_value
+      sql = SqlCommands.max_value_sql(:incremental_col => self.incremental_column,
+                                                  :db => self.destination_schema,
+                                                  :table => self.table_name)
+      puts sql
+      if self.export_to == 'vertica'
+        begin
+          result = Myreplicator::DB.exec_sql('vertica',sql)
+          if !result.blank?
+            return result.rows.first[:max]
+          end
+        rescue Exception => e
+          puts "Vertica Table Not Existed"
+        end
+      else
+        result = Myreplicator::DB.exec_sql(self.destination_schema,sql)
+        if result.first.nil?
+          return ""
+        else
+          case result.first.first.class.to_s
+          when "Symbol", "Fixnum"
+            return result.first.first.to_s
+          else
+            return result.first.first.to_s(:db)
+          end
+        end
+      end
+      return "0"
+    end
+    
     def max_value
       sql = SqlCommands.max_value_sql(:incremental_col => self.incremental_column,
                                       :db => self.source_schema,
