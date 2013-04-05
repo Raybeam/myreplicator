@@ -3,7 +3,7 @@ module Myreplicator
   
     def self.convert type, col_type
       if mysql_vertica_conversion[type].blank?
-        return col_type
+        return col_type.gsub("decimal","numeric")
       else
         return mysql_vertica_conversion[type]
       end

@@ -61,7 +61,8 @@ module Myreplicator
         #VerticaDb::Base.connection.execute sql
         Myreplicator::DB.exec_sql("vertica",sql)
         # rename
-        sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO #{options[:table]};"
+        sql = "ALTER TABLE #{options[:vertica_db]}.#{options[:vertica_schema]}.#{temp_table} RENAME TO \"#{options[:table]}\";"
+        
         #VerticaDb::Base.connection.execute sql
         Myreplicator::DB.exec_sql("vertica",sql)
       end
@@ -365,7 +366,7 @@ module Myreplicator
               Kernel.p "===== DROP CMD ====="
               Kernel.p sql
               Myreplicator::DB.exec_sql("vertica",sql)
-              sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO #{options[:table]};"
+              sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
               Kernel.p sql
               Myreplicator::DB.exec_sql("vertica",sql)
             else

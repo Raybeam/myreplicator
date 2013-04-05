@@ -132,7 +132,7 @@ module Myreplicator
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
           #options[:incremental_val] = @export_obj.max_incremental_value
-          options[:incremental_val] = @export_obj.destination_max_incremental_value            
+          options[:incremental_val] = [@export_obj.destination_max_incremental_value.strftime('%Y-%m-%d %H:%M:%S'), @export_obj.max_incremental_value].min            
         end
 
         #Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
@@ -177,7 +177,7 @@ module Myreplicator
     end
 
     def self.compare_datatypes index, vertica_schema, mysql_schema
-      type = VerticaTypes.convert mysql_schema[index]["data_type"], mysql_schema[index]["column_type"]
+      type = Myreplicator::VerticaTypes.convert mysql_schema[index]["data_type"], mysql_schema[index]["column_type"]
       if vertica_schema.rows[index][:data_type] != type
         if vertica_schema.rows[index][:data_type] != "timestamp"
           return true
