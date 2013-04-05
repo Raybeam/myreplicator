@@ -359,13 +359,24 @@ module Myreplicator
         begin
           result = `#{cmd} 2>&1`
           if result[0..4] == "ERROR"
-            Loader.cleanup metadata
-            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} CASCADE;"
-            Kernel.p "===== DROP CMD ====="
-            Kernel.p sql
-            #VerticaDb::Base.connection.execute sql
-            Myreplicator::DB.exec_sql("vertica",sql)
-            raise result
+            if result[0..9] == "ERROR 4115"
+              # drop the current table. In the next run the table will be re-created and COPY is used to load data into it
+              sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
+              Kernel.p "===== DROP CMD ====="
+              Kernel.p sql
+              Myreplicator::DB.exec_sql("vertica",sql)
+              sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO #{options[:table]};"
+              Kernel.p sql
+              Myreplicator::DB.exec_sql("vertica",sql)
+            else
+              Loader.cleanup metadata
+              sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} CASCADE;"
+              Kernel.p "===== DROP CMD ====="
+              Kernel.p sql
+              #VerticaDb::Base.connection.execute sql
+              Myreplicator::DB.exec_sql("vertica",sql)
+              raise result
+            end
           end
         rescue Exception => e
           raise e.message 

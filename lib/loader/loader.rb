@@ -317,24 +317,11 @@ module Myreplicator
       result = []
       #Kernel.p files
       files.each do |file|
-        #puts "<<<<<<<<<<<<<<<<"
         job = Export.where("id = #{file.export_id}").first
-        #puts "<<<<<<<<<<<<<<<<"
-        #Kernel.p job
-        #puts "<<<<<<<<<<<<<<<<"
-        #puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        #Kernel.p file
-        #puts "&&&&&&&&&&&&&&&&&&&&&&&&&&"
         #if job.state == "transport_completed"
         result << file
         #end
-        #puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
-        #Kernel.p result
-        #puts "^^^^^^^^^^^^^^^^^^^^^^^^^^"
       end
-      #puts "<<<<<<<<<<<<<<<<"
-      
-      #puts "<<<<<<<<<<<<<<<<"
       return result
     end
 
