@@ -22,6 +22,7 @@ module Myreplicator
         "mediumtext" => "VARCHAR(65000)",
         "bit" => "binary",
         "longtext" => "VARCHAR(65000)",
+        "text" => "VARCHAR(65000)",
         "float" => "decimal"
       }
     end

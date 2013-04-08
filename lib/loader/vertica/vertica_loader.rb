@@ -385,6 +385,28 @@ module Myreplicator
           # place holder
         end
       end
+      
+      def  clean_up_temp_tables db
+        sql = "SELECT table_name FROm v_catalog.tables WHERE table_schema ='#{db}' and table_name LIKE 'temp_%';"
+        result = Myreplicator::DB.exec_sql("vertica",sql)
+        result.rows.each do |row|
+          tb = row[:table_name]
+        
+          if tb.size > 15
+            time_str = tb[(tb.size-15)..(tb.size-1)]
+            begin
+              time = Time.local(time_str[0..3], time_str[4..5], time_str[6..7], time_str[9..10], time_str[11..12], time_str[13..14])
+            rescue Exception => e
+              puts e.message
+              next
+            end
+            if time < Time.now() - 1.day
+              sql = "DROP TABLE IF EXISTS #{db}.#{tb} CASCADE;"
+              Myreplicator::DB.exec_sql("vertica",sql)
+            end
+          end
+        end
+      end
 =begin
        def create_all_tables db
          tables = Myreplicator::DB.get_tables(db)

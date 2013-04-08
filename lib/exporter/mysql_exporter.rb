@@ -123,7 +123,7 @@ module Myreplicator
           :filepath => filepath,
           :destination_schema => @export_obj.destination_schema}
 
-        schema_status = MysqlExporter.schema_changed?(options)
+        schema_status = Myreplicator::MysqlExporter.schema_changed?(options)
         Kernel.p "===== schema_status ====="
         Kernel.p schema_status
         if schema_status[:changed] # && new?
@@ -162,11 +162,13 @@ module Myreplicator
         while index < vertica_schema.size
           # check for column name
           if vertica_schema.rows[index][:column_name] != mysql_schema[index]["column_name"]
+            puts "diff"
             return true
           end
   
           # check for column's data type
           if compare_datatypes index, vertica_schema, mysql_schema
+            puts "diff #{index}"
             return true
           end
           # and others ?? (PRIMARY, DEFAULT NULL, etc.)
@@ -178,7 +180,7 @@ module Myreplicator
 
     def self.compare_datatypes index, vertica_schema, mysql_schema
       type = Myreplicator::VerticaTypes.convert mysql_schema[index]["data_type"], mysql_schema[index]["column_type"]
-      if vertica_schema.rows[index][:data_type] != type
+      if vertica_schema.rows[index][:data_type].downcase != type.downcase
         if vertica_schema.rows[index][:data_type] != "timestamp"
           return true
         end
