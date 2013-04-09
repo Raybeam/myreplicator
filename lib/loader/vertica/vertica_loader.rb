@@ -96,7 +96,7 @@ module Myreplicator
                               :file => options[:filepath],
                               :delimiter => "\\0",
                               :null_value => "NULL",
-                              :enclosed => "")
+                              :enclosed => '')
       # working now but should fix this 
         if !vertica_options["vsql"].blank?
           options.reverse_merge!(:vsql => vertica_options["vsql"])
@@ -188,7 +188,7 @@ module Myreplicator
         file_handler = ""
         file_handler = "GZIP" if file_extension == "gz" 
         tmp_dir = Myreplicator.tmp_path
-        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY \'#{prepared_options[:enclosed]}\' EXCEPTIONS '#{tmp_dir}/load_logs/#{prepared_options[:schema]}_#{prepared_options[:table_name]}.log';"
+        sql = "COPY #{prepared_options[:schema]}.#{prepared_options[:table]} FROM LOCAL \'#{prepared_options[:file]}\' #{file_handler} DELIMITER E\'#{prepared_options[:delimiter]}\' NULL as \'#{prepared_options[:null_value]}\' ENCLOSED BY E\'#{prepared_options[:enclosed]}\' EXCEPTIONS '#{tmp_dir}/load_logs/#{prepared_options[:schema]}_#{prepared_options[:table_name]}.log';"
         cmd = "#{prepared_options[:vsql]} -h #{prepared_options[:host]} -U #{prepared_options[:user]} -w #{prepared_options[:pass]} -d #{prepared_options[:db]} -c \"#{sql}\""
         return cmd
       end

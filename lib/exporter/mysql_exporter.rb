@@ -132,7 +132,7 @@ module Myreplicator
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
           #options[:incremental_val] = @export_obj.max_incremental_value
-          options[:incremental_val] = [@export_obj.destination_max_incremental_value.strftime('%Y-%m-%d %H:%M:%S'), @export_obj.max_incremental_value].min            
+          options[:incremental_val] = [@export_obj.destination_max_incremental_value, @export_obj.max_incremental_value].min            
         end
 
         #Kernel.p "===== incremental_export_into_outfile OPTIONS ====="

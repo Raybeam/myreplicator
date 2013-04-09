@@ -94,8 +94,15 @@ module Myreplicator
       if self.export_to == 'vertica'
         begin
           result = Myreplicator::DB.exec_sql('vertica',sql)
-          if !result.blank?
-            return result.rows.first[:max]
+          if result.rows.first[:max].blank?
+            return "0"
+          else
+            case result.rows.first[:max].class.to_s
+            when "DateTime"
+              return result.rows.first[:max].strftime('%Y-%m-%d %H:%M:%S')
+            else
+              return result.rows.first[:max].to_s
+            end
           end
         rescue Exception => e
           puts "Vertica Table Not Existed"
