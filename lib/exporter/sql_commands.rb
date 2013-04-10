@@ -123,8 +123,12 @@ module Myreplicator
       Kernel.p options
       sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
       
-      #sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY ';~~;\n'"
-      sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' LINES TERMINATED BY ';~~;\n'"
+      if options[:enclosed_by].blank?
+        sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' LINES TERMINATED BY ';~~;\n'"
+      else
+        sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY ';~~;\n'"
+      end
+      
       sql += "FROM #{options[:db]}.#{options[:table]} "
 
       if !options[:incremental_col].blank? && !options[:incremental_val].blank?

@@ -86,7 +86,7 @@ module Myreplicator
         puts options
         # How not to hard code the vertica connection config ?
         vertica_options = ActiveRecord::Base.configurations["vertica"]
-
+        enclosed_by = Myreplicator.configs[options[:source_schema]]['enclosed_by']
         options.reverse_merge!(:host => vertica_options["host"],
                               :user => vertica_options["username"],
                               :pass => vertica_options["password"],
@@ -97,7 +97,7 @@ module Myreplicator
                               :delimiter => "\\0",
                               :null_value => "NULL",
                               :line_terminate => ";~~;\n",
-                              :enclosed => '')
+                              :enclosed => "#{Myreplicator.configs[options[:source_schema]]['enclosed_by']}")
                               #:enclosed => '\"')
       # working now but should fix this 
         if !vertica_options["vsql"].blank?
@@ -130,6 +130,7 @@ module Myreplicator
         ops = {:mysql_schema => schema_check[:mysql_schema],
           :vertica_db => options[:db],
           :vertica_schema => options[:destination_schema],
+          :source_schema => options[:source_schema],
           :table => options[:table_name],
           :export_id => options[:export_id],
           :filepath => options[:filepath]
