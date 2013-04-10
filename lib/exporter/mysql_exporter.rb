@@ -192,7 +192,6 @@ module Myreplicator
     def self.get_mysql_schema_rows mysql_schema 
       mysql_schema_simple_form = []
       mysql_schema.each(:as => :hash) do |row|
-        puts row
         mysql_schema_simple_form << row
       end
       return mysql_schema_simple_form
