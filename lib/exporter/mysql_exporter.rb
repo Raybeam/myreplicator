@@ -182,7 +182,10 @@ module Myreplicator
     def self.compare_datatypes index, vertica_schema, mysql_schema
       type = Myreplicator::VerticaTypes.convert mysql_schema[index]["data_type"], mysql_schema[index]["column_type"]
       if vertica_schema.rows[index][:data_type].downcase != type.downcase
-        if vertica_schema.rows[index][:data_type] != "timestamp"
+        if !(vertica_schema.rows[index][:data_type].include?("timestamp")) && 
+          !(vertica_schema.rows[index][:data_type].include?("decimal")) && 
+          !(vertica_schema.rows[index][:data_type].include?("numeric")) &&
+          !(vertica_schema.rows[index][:data_type].include?("binary"))
           return true
         end
         return false

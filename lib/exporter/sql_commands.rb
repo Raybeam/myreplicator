@@ -126,7 +126,7 @@ module Myreplicator
       if options[:enclosed_by].blank?
         sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' LINES TERMINATED BY ';~~;\n'"
       else
-        sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' OPTIONALLY ENCLOSED BY '\\\"'  LINES TERMINATED BY ';~~;\n'"
+        sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' ENCLOSED BY '#{options[:enclosed_by]}'  LINES TERMINATED BY ';~~;\n'"
       end
       
       sql += "FROM #{options[:db]}.#{options[:table]} "
