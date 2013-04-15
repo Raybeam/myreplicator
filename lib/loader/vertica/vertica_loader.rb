@@ -116,8 +116,9 @@ module Myreplicator
         metadata = options[:metadata]
         Kernel.p "===== metadata ====="
         Kernel.p metadata
+        Kernel.p "===== metadata.export_type ====="
+        Kernel.p metadata.export_type
         Kernel.p options
-        #options = {:table => "app_csvs", :destination_schema => "public", :source_schema => "okl_dev"}
         #options = {:table => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
         schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
@@ -155,15 +156,26 @@ module Myreplicator
           options[:table] = temp_table
           Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="
           vertica_copy options
-          options.reverse_merge!(:temp_table => "#{temp_table}")
-          options[:table] = options[:table_name]
-          Kernel.p "===== MERGE ====="
-          vertica_merge options
-          #drop the temp table
-          Kernel.p "===== DROP TEMP TABLE ====="
-          sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
-          #VerticaDb::Base.connection.execute sql
-          Myreplicator::DB.exec_sql("vertica",sql)
+          exp = Export.find(metadata.export_id)
+          if exp.export_type == 'incremental'
+            options.reverse_merge!(:temp_table => "#{temp_table}")
+            options[:table] = options[:table_name]
+            Kernel.p "===== MERGE ====="
+            vertica_merge options
+            #drop the temp table
+            Kernel.p "===== DROP TEMP TABLE ====="
+            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
+            Myreplicator::DB.exec_sql("vertica",sql)
+          elsif exp.export_type == 'all'
+            options.reverse_merge!(:temp_table => "#{temp_table}")
+            options[:table] = options[:table_name]
+            Kernel.p "===== DROP CURRENT TABLE ====="
+            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
+            Myreplicator::DB.exec_sql("vertica",sql)
+            sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
+            Kernel.p sql
+            Myreplicator::DB.exec_sql("vertica",sql)
+          end
         end
       end
       
@@ -315,15 +327,6 @@ module Myreplicator
         end
         sql+= "WHEN NOT MATCHED THEN "
         sql+= "INSERT "
-        #count = 1
-        #inserted_columns.each do |col|
-        #  if count < inserted_columns.size
-        #    sql+= "#{col}, "
-        #  else
-        #    sql+= "#{col} "
-        #  end
-        #  count += 1
-        #end
         count = 1
         sql+= " VALUES ("
         inserted_columns.each do |col|

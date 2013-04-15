@@ -205,7 +205,6 @@ module Myreplicator
 
     def set_attributes options
       options.symbolize_keys!
-
       @export_time = options[:export_time] if options[:export_time]
       @table = options[:table] if options[:table]
       @database = options[:database] if options[:database]
