@@ -152,6 +152,7 @@ module Myreplicator
           exp = Export.find(metadata.export_id)
           Kernel.p "===== DROP CURRENT TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
+          Myreplicator::DB.exec_sql("vertica",sql)
           # run the export. The next time loader runs, it will load the file
           exp.export
         else
@@ -420,6 +421,7 @@ module Myreplicator
       def get_analyze_constraints *args
         options = args.extract_options!
         exp = Export.find(options[:export_id])
+        Kernel.p "!!!!! get_analyze_constraints !!!!!"
         begin
           if exp.analyze_constraints == true
             sql = "SELECT analyze_constraints('#{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]}');"
