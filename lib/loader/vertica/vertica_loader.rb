@@ -157,16 +157,7 @@ module Myreplicator
           Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="
           vertica_copy options
           exp = Export.find(metadata.export_id)
-          if exp.export_type == 'incremental'
-            options.reverse_merge!(:temp_table => "#{temp_table}")
-            options[:table] = options[:table_name]
-            Kernel.p "===== MERGE ====="
-            vertica_merge options
-            #drop the temp table
-            Kernel.p "===== DROP TEMP TABLE ====="
-            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
-            Myreplicator::DB.exec_sql("vertica",sql)
-          elsif exp.export_type == 'all'
+          if exp.export_type == 'all'
             options.reverse_merge!(:temp_table => "#{temp_table}")
             options[:table] = options[:table_name]
             Kernel.p "===== DROP CURRENT TABLE ====="
@@ -174,6 +165,15 @@ module Myreplicator
             Myreplicator::DB.exec_sql("vertica",sql)
             sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
             Kernel.p sql
+            Myreplicator::DB.exec_sql("vertica",sql)
+          elsif exp.export_type == 'incremental'
+            options.reverse_merge!(:temp_table => "#{temp_table}")
+            options[:table] = options[:table_name]
+            Kernel.p "===== MERGE ====="
+            vertica_merge options
+            #drop the temp table
+            Kernel.p "===== DROP TEMP TABLE ====="
+            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
             Myreplicator::DB.exec_sql("vertica",sql)
           end
         end
@@ -270,7 +270,7 @@ module Myreplicator
       def get_mysql_keys mysql_schema_simple_form
         result = []
         mysql_schema_simple_form.each do |col|
-          if col["column_key"] == "PRI"
+          if col["column_key"] == "PRI" || col["column_key"] == "UNI" 
             result << col["column_name"]
           end
         end
@@ -280,7 +280,7 @@ module Myreplicator
       def get_mysql_none_keys mysql_schema_simple_form
         result = []
         mysql_schema_simple_form.each do |col|
-          if col["column_key"].blank?
+          if col["column_key"] != "PRI" && col["column_key"] != "UNI"
             result << col["column_name"]
           end
         end

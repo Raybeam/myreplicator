@@ -7,7 +7,7 @@ module Myreplicator
       sql += "#{options[:table]} ("
 
       index = 1
-      primary_set = false
+      #primary_set = false
 
       options[:columns].each do |column|
         sql += "\"#{column['column_name']}\" "
@@ -15,22 +15,40 @@ module Myreplicator
         sql += data_type(column['data_type'], column['column_type'])
         sql += " "
 
-        if column['column_key'] == "PRI"
-          sql += key(column['column_key']) + " " unless primary_set # set only one primary key
-          primary_set = true
-        end
-
         sql += nullable(column['is_nullable'])
         sql += " "
 
         if index < options[:columns].size
           sql += ", "
-        else
-          sql += ");"
         end
         index += 1
       end
- 
+      
+      # Add primary key
+      primary_set = false
+      options[:columns].each do |column|
+        if column['column_key'] == "PRI"
+          if !primary_set
+            sql += ", PRIMARY KEY (" + "\"#{column['column_name']}\" "
+          else
+            sql += ", " + "\"#{column['column_name']}\" "
+          end
+          primary_set = true
+        end
+      end
+      if primary_set
+        sql += ") "
+      end
+      
+      # Add unique key
+      options[:columns].each do |column|
+        if column['column_key'] == "UNI"
+          sql += ", UNIQUE (" + "\"#{column['column_name']}\" "
+          sql += ") "
+        end
+      end
+      
+      sql += ");"
       puts sql
     
       return sql
@@ -46,13 +64,13 @@ module Myreplicator
     end
  
     def self.data_type type, col_type
-      type = VerticaTypes.convert type, col_type
+      type = Myreplicator::VerticaTypes.convert type, col_type
       result = " #{type} "
       return result
     end
 
     def self.key col_key
-      col_key = VerticaTypes.convert_key col_key
+      col_key = Myreplicator::VerticaTypes.convert_key col_key
       return  "#{col_key} "
     end
   end
