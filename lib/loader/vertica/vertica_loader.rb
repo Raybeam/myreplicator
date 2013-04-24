@@ -151,6 +151,14 @@ module Myreplicator
             Loader.cleanup metadata #Remove incremental file
             Kernel.p "===== Remove incremental file ====="
           end
+        elsif get_analyze_constraints(ops) > 0 # check for primary key/unique keys violations
+          exp = Export.find(metadata.export_id)
+          Loader.clear_older_files metadata
+          Loader.cleanup metadata
+          Kernel.p "===== DROP CURRENT TABLE ====="
+          sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
+          # run the export. The next time loader runs, it will load the file
+          exp.export
         else
           temp_table = create_temp_table ops
           options[:table] = temp_table
@@ -412,6 +420,20 @@ module Myreplicator
             end
           end
         end
+      end
+      
+      def get_analyze_constraints *args
+        options = args.extract_options!
+        exp = Export.find(options[:export_id])
+        begin
+          if exp.analyze_constraints == 1
+            sql = "SELECT analyze_constraints('#{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]}');"
+            result = Myreplicator::DB.exec_sql("vertica",sql)
+            return result.entries.size
+          end
+        rescue Exception => e
+          puts e.message
+        end        
       end
 =begin
        def create_all_tables db
