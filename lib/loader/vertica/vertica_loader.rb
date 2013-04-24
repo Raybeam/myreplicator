@@ -125,7 +125,6 @@ module Myreplicator
                                                      :source_schema => options[:source_schema])
         Kernel.p "===== schema_check ====="
         Kernel.p schema_check
-        Kernel.p schema_check[:mysql_schema]
         #create a temp table
         temp_table = "temp_" + options[:table_name] + DateTime.now.strftime('%Y%m%d_%H%M%S').to_s
         ops = {:mysql_schema => schema_check[:mysql_schema],
@@ -136,8 +135,6 @@ module Myreplicator
           :export_id => options[:export_id],
           :filepath => options[:filepath]
         }
-        Kernel.p "===== schema_check[:mysql_schema] ====="
-        Kernel.p ops
         if schema_check[:new]
           create_table(ops)
           #LOAD DATA IN
@@ -426,14 +423,15 @@ module Myreplicator
         options = args.extract_options!
         exp = Export.find(options[:export_id])
         begin
-          if exp.analyze_constraints == 1
+          if exp.analyze_constraints == true
             sql = "SELECT analyze_constraints('#{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]}');"
             result = Myreplicator::DB.exec_sql("vertica",sql)
             return result.entries.size
           end
         rescue Exception => e
           puts e.message
-        end        
+        end  
+        return 0      
       end
 =begin
        def create_all_tables db
