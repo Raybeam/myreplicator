@@ -150,8 +150,6 @@ module Myreplicator
           end
         elsif get_analyze_constraints(ops) > 0 # check for primary key/unique keys violations
           exp = Export.find(metadata.export_id)
-          Loader.clear_older_files metadata
-          Loader.cleanup metadata
           Kernel.p "===== DROP CURRENT TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
           # run the export. The next time loader runs, it will load the file
