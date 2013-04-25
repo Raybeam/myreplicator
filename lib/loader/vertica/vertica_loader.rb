@@ -274,7 +274,7 @@ module Myreplicator
       def get_mysql_keys mysql_schema_simple_form
         result = []
         mysql_schema_simple_form.each do |col|
-          if col["column_key"] == "PRI" || col["column_key"] == "UNI" 
+          if col["column_key"] == "PRI" 
             result << col["column_name"]
           end
         end
@@ -284,7 +284,7 @@ module Myreplicator
       def get_mysql_none_keys mysql_schema_simple_form
         result = []
         mysql_schema_simple_form.each do |col|
-          if col["column_key"] != "PRI" && col["column_key"] != "UNI"
+          if col["column_key"] != "PRI"
             result << col["column_name"]
           end
         end
