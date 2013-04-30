@@ -426,13 +426,23 @@ module Myreplicator
           if exp.analyze_constraints == true
             sql = "SELECT analyze_constraints('#{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]}');"
             result = Myreplicator::DB.exec_sql("vertica",sql)
-            return result.entries.size
+            if result.entries.size > 0
+              return 1
+            end
+            sql = "SELECT COUNT(*) FROM #{options[:vertica_schema]}.#{options[:table]} WHERE modified_date < '#{(DateTime.now() -1.hour).strftime('%Y-%m-%d %H:%M:%S')}';"
+            source_count = Myreplicator::DB.exec_sql("#{options[:source_schema]}",sql)
+            target_count = Myreplicator::DB.exec_sql("vertica",sql)
+            if source_count != target_count
+              return 1
+            end
           end
         rescue Exception => e
           puts e.message
         end  
         return 0      
       end
+      
+      
 =begin
        def create_all_tables db
          tables = Myreplicator::DB.get_tables(db)

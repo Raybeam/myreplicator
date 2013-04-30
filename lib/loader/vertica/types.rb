@@ -23,7 +23,8 @@ module Myreplicator
         "bit" => "binary",
         "longtext" => "VARCHAR(65000)",
         "text" => "VARCHAR(65000)",
-        "float" => "decimal"
+        "float" => "decimal",
+        "double" => "double precision"
       }
     end
 
