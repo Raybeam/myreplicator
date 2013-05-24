@@ -133,7 +133,6 @@ module Myreplicator
 
       if options[:export_type]=="incremental" && !options[:incremental_col].blank? && !options[:incremental_val].blank?
         if options[:incremental_col_type] == "datetime"
-          sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
           if options[:incremental_val] == "0"
             options[:incremental_val] = "1900-01-01 00:00:00"
           end
