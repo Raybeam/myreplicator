@@ -131,11 +131,12 @@ module Myreplicator
       
       sql += "FROM #{options[:db]}.#{options[:table]} "
 
-      if !options[:incremental_col].blank? && !options[:incremental_val].blank?
+      if options[:export_type]=="incremental" && !options[:incremental_col].blank? && !options[:incremental_val].blank?
         if options[:incremental_col_type] == "datetime"
           sql += "WHERE #{options[:incremental_col]} >= '#{options[:incremental_val]}'"
-        else
-          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val]}"
+          sql += "WHERE #{options[:incremental_col]} >= '#{(DateTime.parse(options[:incremental_val]) -1.day).to_s(:db)}'" #buffer 1 day
+        elsif options[:incremental_col_type] == "int"
+          sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val].to_i - 10000}" #buffer 10000 
         end
       end
 

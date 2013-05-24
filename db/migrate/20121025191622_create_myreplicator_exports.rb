@@ -25,6 +25,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.datetime :transfer_finished_at, :default => nil
       t.timestamps
       t.boolean :analyze_constraints, :default => false
+      t.boolean :night_refresh, :default => false
     end  
     add_index :myreplicator_exports, [:source_schema, :destination_schema, :table_name], :unique => true, :name => "unique_index"
   end

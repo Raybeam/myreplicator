@@ -133,6 +133,7 @@ module Myreplicator
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
           #options[:incremental_val] = @export_obj.max_incremental_value
+          options[:export_type] = @export_obj.export_type
           options[:incremental_val] = [@export_obj.destination_max_incremental_value, @export_obj.max_incremental_value].min
         end
 
