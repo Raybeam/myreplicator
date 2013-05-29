@@ -150,7 +150,7 @@ module Myreplicator
             Kernel.p "===== Remove incremental file ====="
           end
         elsif exp.nightly_refresh && (exp.nightly_refresh_frequency != 0)
-          if (Time.now() - Time.parse(exp.nightly_refresh_last_run)) >= exp.nightly_refresh_frequency.minute
+          if (Time.now() - exp.nightly_refresh_last_run) >= exp.nightly_refresh_frequency.minute
             Loader.clear_older_files metadata  # clear old incremental files
             exp.nightly_refresh_last_run = Time.now().change(:min => 0)
             exp.save!
