@@ -135,6 +135,7 @@ module Myreplicator
           :export_id => options[:export_id],
           :filepath => options[:filepath]
         }
+        exp = Myreplicator::Export.find(metadata.export_id)
         if schema_check[:new]
           create_table(ops)
           #LOAD DATA IN
@@ -148,14 +149,23 @@ module Myreplicator
             Loader.cleanup metadata #Remove incremental file
             Kernel.p "===== Remove incremental file ====="
           end
+        elsif exp.nightly_refresh && (exp.nightly_refresh_frequency != 0)
+          if (Time.now() - Time.parse(exp.nightly_refresh_last_run)) >= exp.nightly_refresh_frequency.minute
+            Loader.clear_older_files metadata  # clear old incremental files
+            exp.nightly_refresh_last_run = Time.now().change(:min => 0)
+            exp.save!
+            sql = "TRUNCATE TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:table_name]};"
+            Myreplicator::DB.exec_sql("vertica",sql)
+            # run the export. The next time loader runs, it will load the file
+            exp.export
+          end
         elsif get_analyze_constraints(ops) > 0 # check for primary key/unique keys violations
-          exp = Export.find(metadata.export_id)
           Kernel.p "===== DROP CURRENT TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table_name]} CASCADE;"
           Myreplicator::DB.exec_sql("vertica",sql)
           # run the export. The next time loader runs, it will load the file
           exp.export
-        else
+        else # incremental load
           temp_table = create_temp_table ops
           options[:table] = temp_table
           Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="

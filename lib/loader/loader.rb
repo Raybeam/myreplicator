@@ -18,10 +18,27 @@ module Myreplicator
     # Main method provided for resque
     # Reconnection provided for resque workers
     ##
-    def self.perform
-      ActiveRecord::Base.verify_active_connections!
-      ActiveRecord::Base.connection.reconnect!
-      load # Kick off the load process
+    def self.perform *args
+      options = args.extract_options!
+      id = options[:id]
+      if id.blank?  
+        ActiveRecord::Base.verify_active_connections!
+        ActiveRecord::Base.connection.reconnect!
+        load # Kick off the load process
+      else
+        ActiveRecord::Base.verify_active_connections!
+        ActiveRecord::Base.connection.reconnect!
+        load_id(id)
+      end
+    end
+    
+    ##
+    # Running loader for 1 export object
+    ##
+    def load_id id
+      
+      #Resque.enqueue(Myreplicator::Loader, id)
+      #Resque.enqueue(Myreplicator::Export,342)
     end
 
     ##
