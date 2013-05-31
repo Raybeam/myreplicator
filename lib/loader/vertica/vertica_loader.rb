@@ -119,7 +119,7 @@ module Myreplicator
         Kernel.p "===== metadata.export_type ====="
         Kernel.p metadata.export_type
         Kernel.p options
-        #options = {:table => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
+        #options = {:table_name => "actucast_appeal", :destination_schema => "public", :source_schema => "raw_sources"}
         schema_check = Myreplicator::MysqlExporter.schema_changed?(:table => options[:table_name], 
                                                      :destination_schema => options[:destination_schema], 
                                                      :source_schema => options[:source_schema])
@@ -149,16 +149,14 @@ module Myreplicator
             Loader.cleanup metadata #Remove incremental file
             Kernel.p "===== Remove incremental file ====="
           end
-        elsif exp.nightly_refresh && (exp.nightly_refresh_frequency != 0)
-          if (Time.now() - exp.nightly_refresh_last_run) >= exp.nightly_refresh_frequency.minute
-            Loader.clear_older_files metadata  # clear old incremental files
-            exp.nightly_refresh_last_run = Time.now().change(:min => 0)
-            exp.save!
-            sql = "TRUNCATE TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:table_name]};"
-            Myreplicator::DB.exec_sql("vertica",sql)
-            # run the export. The next time loader runs, it will load the file
-            exp.export
-          end
+        elsif exp.nightly_refresh && (exp.nightly_refresh_frequency != 0) && ((Time.now() - exp.nightly_refresh_last_run) >= exp.nightly_refresh_frequency.minute)          
+          Loader.clear_older_files metadata  # clear old incremental files
+          exp.nightly_refresh_last_run = Time.now().change(:min => 0)
+          exp.save!
+          sql = "TRUNCATE TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:table_name]};"
+          Myreplicator::DB.exec_sql("vertica",sql)
+          # run the export. The next time loader runs, it will load the file
+          exp.export
         elsif get_analyze_constraints(ops) > 0 # check for primary key/unique keys violations
           Kernel.p "===== DROP CURRENT TABLE ====="
           sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table_name]} CASCADE;"
@@ -170,25 +168,31 @@ module Myreplicator
           options[:table] = temp_table
           Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="
           vertica_copy options
-          exp = Export.find(metadata.export_id)
-          if exp.export_type == 'all'
-            options.reverse_merge!(:temp_table => "#{temp_table}")
-            options[:table] = options[:table_name]
-            Kernel.p "===== DROP CURRENT TABLE ====="
-            sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
-            Myreplicator::DB.exec_sql("vertica",sql)
-            sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
-            Kernel.p sql
-            Myreplicator::DB.exec_sql("vertica",sql)
-          elsif exp.export_type == 'incremental'
-            options.reverse_merge!(:temp_table => "#{temp_table}")
-            options[:table] = options[:table_name]
-            Kernel.p "===== MERGE ====="
-            vertica_merge options
-            #drop the temp table
+          options.reverse_merge!(:temp_table => "#{temp_table}")
+          options[:table] = options[:table_name]
+          sql = "SELECT COUNT(*) FROM #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]};"
+          result = Myreplicator::DB.exec_sql("vertica",sql)
+          #temporary fix for racing refresh cause by one worker doing loader for many export jobs. Better fix: each export job starts its own loader worker
+          if result.entries.first[:COUNT] == 0
             Kernel.p "===== DROP TEMP TABLE ====="
             sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
             Myreplicator::DB.exec_sql("vertica",sql)
+          else
+            if exp.export_type == 'all'
+              Kernel.p "===== DROP CURRENT TABLE ====="
+              sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
+              Myreplicator::DB.exec_sql("vertica",sql)
+              sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
+              Kernel.p sql
+              Myreplicator::DB.exec_sql("vertica",sql)
+            elsif exp.export_type == 'incremental'
+              Kernel.p "===== MERGE ====="
+              vertica_merge options
+              #drop the temp table
+              Kernel.p "===== DROP TEMP TABLE ====="
+              sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"
+              Myreplicator::DB.exec_sql("vertica",sql)
+            end
           end
         end
       end
