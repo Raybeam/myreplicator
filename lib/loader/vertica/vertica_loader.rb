@@ -56,6 +56,8 @@ module Myreplicator
         puts new_options
         options[:table] = table
         puts options
+        g_options = {:db => options[:vertica_db], :schema => options[:vertica_schema], :table => options[:table]}
+        grants = Myreplicator::VerticaUtils.get_grants g_options
         # drop the old table
         sql = "DROP TABLE IF EXISTS #{options[:vertica_db]}.#{options[:vertica_schema]}.#{options[:table]} CASCADE;"
         #VerticaDb::Base.connection.execute sql
@@ -65,6 +67,7 @@ module Myreplicator
         
         #VerticaDb::Base.connection.execute sql
         Myreplicator::DB.exec_sql("vertica",sql)
+        Myreplicator::VerticaUtils.set_grants(grants)
       end
       
       def create_temp_table *args
@@ -179,12 +182,15 @@ module Myreplicator
             Myreplicator::DB.exec_sql("vertica",sql)
           else
             if exp.export_type == 'all'
+              g_options = {:db => options[:db], :schema => options[:destination_schema], :table => options[:table]}
+              grants = Myreplicator::VerticaUtils.get_grants g_options
               Kernel.p "===== DROP CURRENT TABLE ====="
               sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
               Myreplicator::DB.exec_sql("vertica",sql)
               sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
               Kernel.p sql
               Myreplicator::DB.exec_sql("vertica",sql)
+              Myreplicator::VerticaUtils.set_grants(grants)
             elsif exp.export_type == 'incremental'
               Kernel.p "===== MERGE ====="
               vertica_merge options
@@ -385,7 +391,8 @@ module Myreplicator
           result = `#{cmd} 2>&1`
           if result[0..4] == "ERROR"
             if result[0..9] == "ERROR 4115"
-              # drop the current table. In the next run the table will be re-created and COPY is used to load data into it
+              g_options = {:db => options[:db], :schema => options[:destination_schema], :table => options[:table]}
+              grants = Myreplicator::VerticaUtils.get_grants g_options
               sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:table]} CASCADE;"
               Kernel.p "===== DROP CMD ====="
               Kernel.p sql
@@ -393,6 +400,7 @@ module Myreplicator
               sql = "ALTER TABLE #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} RENAME TO \"#{options[:table]}\";"
               Kernel.p sql
               Myreplicator::DB.exec_sql("vertica",sql)
+              Myreplicator::VerticaUtils.set_grants(grants)
             else
               Loader.cleanup metadata
               sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]} CASCADE;"

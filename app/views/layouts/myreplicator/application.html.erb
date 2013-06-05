@@ -12,6 +12,8 @@
 <div id="sub-header">
   <a href="<%= root_path %>" <% if @tab == "home" %>class="active"<% end %>>home</a>
   <a href="<%= exports_path %>" <% if @tab == "exports" %>class="active"<% end %>>exports</a>
+  <%= link_to content_tag(:span, "pause"), {:controller => "home", :action => 'pause'}, {:class => 'button'} %>
+  <%= link_to content_tag(:span, "resume"), {:controller => "home", :action => 'resume'}, {:class => 'button'} %>
 </div>
 
 <%= yield %>
