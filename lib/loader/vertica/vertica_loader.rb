@@ -167,11 +167,11 @@ module Myreplicator
           # run the export. The next time loader runs, it will load the file
           exp.export
         else # incremental load
-          temp_table = create_temp_table ops
+          temp_table = Myreplicator::VerticaLoader.create_temp_table ops
           options[:table] = temp_table
           Kernel.p "===== COPY TO TEMP TABLE #{temp_table} ====="
-          vertica_copy options
-          options.reverse_merge!(:temp_table => "#{temp_table}")
+          Myreplicator::VerticaLoader.vertica_copy options
+          options[:temp_table] = "#{temp_table}"
           options[:table] = options[:table_name]
           sql = "SELECT COUNT(*) FROM #{options[:db]}.#{options[:destination_schema]}.#{options[:temp_table]};"
           result = Myreplicator::DB.exec_sql("vertica",sql)
@@ -193,7 +193,7 @@ module Myreplicator
               Myreplicator::VerticaUtils.set_grants(grants)
             elsif exp.export_type == 'incremental'
               Kernel.p "===== MERGE ====="
-              vertica_merge options
+              Myreplicator::VerticaLoader.vertica_merge options
               #drop the temp table
               Kernel.p "===== DROP TEMP TABLE ====="
               sql = "DROP TABLE IF EXISTS #{options[:db]}.#{options[:destination_schema]}.#{temp_table} CASCADE;"

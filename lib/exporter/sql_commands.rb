@@ -237,7 +237,7 @@ module Myreplicator
       sql = ""
 
       if options[:incremental_col]
-        sql = "SELECT max(#{options[:incremental_col]}) FROM #{options[:db]}.#{options[:table]}" 
+        sql = "SELECT COALESCE(max(#{options[:incremental_col]}),'#{options[:max_incremental_value]}') FROM #{options[:db]}.#{options[:table]}" 
       else
         raise Myreplicator::Exceptions::MissingArgs.new("Missing Incremental Column Parameter")
       end

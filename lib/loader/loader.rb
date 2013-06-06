@@ -230,7 +230,7 @@ module Myreplicator
     # Uses the values specified in the metadatta object
     ##
     def self.incremental_load metadata
-      exp = Export.find(metadata.export_id)
+      exp = Myreplicator::Export.find(metadata.export_id)
       #Loader.unzip(metadata.filename)
       #metadata.zipped = false
       
