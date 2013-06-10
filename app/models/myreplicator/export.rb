@@ -86,38 +86,42 @@ module Myreplicator
       @file_name ||= "#{source_schema}_#{table_name}_#{Time.now.to_i}.tsv"
     end
     
-    def destination_max_incremental_value
-      sql = SqlCommands.max_value_sql(:incremental_col => self.incremental_column,
-                                      :max_incremental_value => self.max_incremental_value,
-                                      :db => self.destination_schema,
-                                      :table => self.table_name)
-      puts sql
+    def destination_max_incremental_value      
       if self.export_to == 'vertica'
+        sql = SqlCommands.max_value_vsql(:incremental_col => self.incremental_column,
+                                              :max_incremental_value => self.max_incremental_value,
+                                              :db => self.destination_schema,
+                                              :incremental_col_type => self.incremental_column_type,
+                                              :table => self.table_name)
+        puts sql
         begin
           result = Myreplicator::DB.exec_sql('vertica',sql)
-          if result.rows.first[:COALESCE].blank?
+          if result.rows.first[:max].blank?
             return "0"
           else
-            case result.rows.first[:COALESCE].class.to_s
+            case result.rows.first[:max].class.to_s
             when "DateTime"
-              return result.rows.first[:COALESCE].strftime('%Y-%m-%d %H:%M:%S')
+              return result.rows.first[:max].strftime('%Y-%m-%d %H:%M:%S')
             else
-              return result.rows.first[:COALESCE].to_s
+              return result.rows.first[:max].to_s
             end
           end
         rescue Exception => e
           puts "Vertica Table Not Existed"
         end
       else
-        result = Myreplicator::DB.exec_sql(self.destination_schema,sql)
-        if result.first.nil?
-          return ""
-        else
-          case result.first.first.class.to_s
-          when "Symbol", "Fixnum"
-            return result.first.first.to_s
+        begin
+          sql = SqlCommands.max_value_sql(:incremental_col => self.incremental_column,
+                                                :max_incremental_value => self.max_incremental_value,
+                                                :db => self.source_schema,
+                                                :incremental_col_type => self.incremental_column_type,
+                                                :table => self.table_name)
+          puts sql
+          result = Myreplicator::DB.exec_sql(self.destination_schema,sql)
+          if result.first.nil?
+            return "0"
           else
-            return result.first.first.to_s(:db)
+            return result.first.first
           end
         end
       end
@@ -128,17 +132,12 @@ module Myreplicator
       sql = SqlCommands.max_value_sql(:incremental_col => self.incremental_column,
                                       :max_incremental_value => self.max_incremental_value,
                                       :db => self.source_schema,
+                                      :incremental_col_type => self.incremental_column_type,
                                       :table => self.table_name)
       result = exec_on_source(sql)
       if result.first.nil?
-        return ""
+        return "0"
       else
-        #case result.first.first.class.to_s
-        #when "Symbol", "Fixnum"
-        #  return result.first.first.to_s
-        #else
-        #  return result.first.first.to_s(:db)
-        #end
         return result.first.first
       end
     end
@@ -172,7 +171,8 @@ module Myreplicator
     ##
     def connection_factory type
       config = Myreplicator.configs[self.source_schema]
-      
+      puts self.source_schema
+      puts config
       case type
       when :ssh
         if config.has_key? "ssh_password"

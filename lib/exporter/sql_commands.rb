@@ -237,6 +237,10 @@ module Myreplicator
       sql = ""
 
       if options[:incremental_col]
+        
+        if options[:incremental_col_type] == "datetime" && options[:max_incremental_value] == '0'
+          options[:max_incremental_value] = "1900-01-01 00:00:00"
+        end
         sql = "SELECT COALESCE(max(#{options[:incremental_col]}),'#{options[:max_incremental_value]}') FROM #{options[:db]}.#{options[:table]}" 
       else
         raise Myreplicator::Exceptions::MissingArgs.new("Missing Incremental Column Parameter")
@@ -244,6 +248,19 @@ module Myreplicator
       
       return sql
     end
-
+    
+    def self.max_value_vsql *args
+      options = args.extract_options!
+      sql = ""
+      
+      if options[:incremental_col]
+        sql = "SELECT max(#{options[:incremental_col]}) FROM #{options[:db]}.#{options[:table]}"
+      else
+        raise Myreplicator::Exceptions::MissingArgs.new("Missing Incremental Column Parameter")
+      end
+            
+      return sql
+    end
+    
   end
 end
