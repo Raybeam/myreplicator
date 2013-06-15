@@ -41,7 +41,7 @@ module Myreplicator
     def resume
       flash[:notice] = "Resume All DR Jobs"
       require 'rake'
-      Rake::Task.load(Rails.root.to_s + "/lib/tasks/" + "resque.rake")
+      Rake::Task.load(Rails.root.to_s + "/lib/tasks/" + "maintenance.rake")
       resque_reload = Rake::Task['maintenance:start_dr_jobs']
       resque_reload.reenable
       resque_reload.execute(ENV["RAILS_ENV"])

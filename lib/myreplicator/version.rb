@@ -1,3 +1,3 @@
 module Myreplicator
-  VERSION = "1.1.48"
+  VERSION = "1.1.49"
 end
