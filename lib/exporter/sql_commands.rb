@@ -36,7 +36,7 @@ module Myreplicator
       # cmd += "--tab=#{options[:filepath]} "
       # cmd += "--fields-enclosed-by=\'\"\' "
       # cmd += "--fields-escaped-by=\'\\\\\' "
-        
+      puts cmd  
       return cmd
     end
 

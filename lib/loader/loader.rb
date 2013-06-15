@@ -208,16 +208,29 @@ module Myreplicator
     # Creates table and loads data
     ##
     def self.initial_load metadata
-      exp = Export.find(metadata.export_id)
+      exp = Myreplicator::Export.find(metadata.export_id)
       #Kernel.p "===== unzip ====="
       #Loader.unzip(metadata.filename)
       #metadata.zipped = false
+      filename = metadata.filename
+      if filename.split('.').last == 'gz'
+        filepath = metadata.destination_filepath(tmp_dir)
+        cmd = "gunzip #{filepath}"
+        system(cmd)
+        unzip_file = File.join(tmp_dir, filename.split('.')[0..-2].join('.'))
+        cmd = Myreplicator::ImportSql.initial_load(:db => exp.destination_schema,
+                                         :filepath => unzip_file.to_s)
+        puts cmd
+        result = `#{cmd} 2>&1` # execute
+        cmd2 = "gzip #{unzip_file.to_s}"
+        system(cmd2)
+      else
+        cmd = Myreplicator::ImportSql.initial_load(:db => exp.destination_schema,
+                                         :filepath => metadata.destination_filepath(tmp_dir))
+        puts cmd
+        result = `#{cmd} 2>&1` # execute
+      end
       
-      cmd = ImportSql.initial_load(:db => exp.destination_schema,
-                                   :filepath => metadata.destination_filepath(tmp_dir))      
-      puts cmd
-      
-      result = `#{cmd}` # execute
       unless result.nil?
         if result.size > 0
           raise Exceptions::LoaderError.new("Initial Load #{metadata.filename} Failed!\n#{result}") 
