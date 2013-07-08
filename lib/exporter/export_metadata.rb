@@ -191,6 +191,7 @@ module Myreplicator
     # Echo is used for writing the file
     ##
     def store!
+      Kernel.p "$$$$$$$$$$$$$$$$$$ @ssh CHECK $$$$$$$$$$$$$$$$$$"
       cmd = "echo \"#{self.to_json.gsub("\"","\\\\\"")}\" > #{@filepath}.json"
       puts cmd
       result = @ssh.exec!(cmd)

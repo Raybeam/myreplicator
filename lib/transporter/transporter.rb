@@ -40,7 +40,7 @@ module Myreplicator
     # downloads export files concurrently from multiple sources
     ##
     def self.transfer
-      unique_jobs = Export.where("active = 1").group("source_schema")
+      unique_jobs = Myreplicator::Export.where("active = 1").group("source_schema")
       Kernel.p "===== unique_jobs ====="
       Kernel.p unique_jobs 
       unique_jobs.each do |export|
@@ -246,6 +246,7 @@ module Myreplicator
       Kernel.p "===== export ====="
       Kernel.p export
       cmd = "cd #{Myreplicator.configs[export.source_schema]["ssh_tmp_dir"]}; grep -ls export_completed *.json"
+      return cmd
     end
     
   end
