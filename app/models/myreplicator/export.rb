@@ -44,10 +44,30 @@ module Myreplicator
         export_obj.export
       end
 
-     end
+    end
 
-     ##
-     # Runs the export process using the required Exporter library
+    def reload
+      Log.run(:job_type => "export", :name => schedule_name, 
+      :file => filename, :export_id => id) do |log|
+        # TRUNCATE TABLE & Rest incremental value if there is any
+        sql = "TRUNCATE TABLE '#{@export.destination_schema}'.'#{@export.table_name}';"
+        if self.export_to == "vertica"
+          Myreplicator::DB.exec_sql("vertica",sql)
+        else
+          Myreplicator::DB.exec_sql("#{@export.destination_schema}",sql)
+        end
+        
+        if self.export_type != "all"
+          self.max_incremental_value = nil
+          self.save!
+        end
+        
+        exporter = MysqlExporter.new
+        exporter.export_table self # pass current object to exporter
+      end
+    end 
+    ##
+    # Runs the export process using the required Exporter library
     ##
     def export
       Log.run(:job_type => "export", :name => schedule_name, 

@@ -97,6 +97,13 @@ module Myreplicator
         format.json { head :no_content }
       end
     end
+    
+    def reload
+      @export = Export.find(params[:id])
+      flash[:notice] = "'#{@export.destination_schema}.#{@export.table_name}' is reloading"
+      @export.reload
+      redirect_to :action => 'show'
+    end
 
   private
 

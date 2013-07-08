@@ -19,6 +19,7 @@
        <th><%= sortable "s3_path" %></th>
        <th><%= sortable "cron" %></th> 
        <th class="center">Actions</th>
+       <th class="center">Utils</th>
       </tr>
     </thead>
     <tbody>
@@ -39,6 +40,9 @@
           <%= link_to 'review', export, :class=> 'action view' %>
           <%= link_to 'edit', edit_export_path(export), :class => 'action edit' %>
           <%= link_to 'destroy', export, method: :delete, data: { confirm: 'Are you sure?' }, :class=> 'action delete' %>
+        </td>
+        <td>
+          <%= link_to 'reload', reload_export_path(export), :class=> 'action edit' %>
         </td>
       </tr>
     <% end %>

@@ -8,4 +8,10 @@ Myreplicator::Engine.routes.draw do
     get :pause, :on => :collection
     get :resume, :on => :collection
   end
+  
+  resources :exports do
+    member do
+      get 'reload'
+    end
+  end
 end
