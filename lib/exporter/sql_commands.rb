@@ -181,7 +181,7 @@ module Myreplicator
           flags += " --#{flag} "
         end
       end
-
+      
       cmd = Myreplicator.mysql
       cmd += "#{flags} "
       
