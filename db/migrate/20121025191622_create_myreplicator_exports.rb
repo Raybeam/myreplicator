@@ -28,6 +28,7 @@ class CreateMyreplicatorExports < ActiveRecord::Migration
       t.boolean :nightly_refresh, :default => false
       t.integer :nightly_refresh_frequency, :default => nil
       t.datetime :nightly_refresh_last_run, :default => nil
+      t.string :removing_special_chars, :default => nil
     end  
     add_index :myreplicator_exports, [:source_schema, :destination_schema, :table_name], :unique => true, :name => "unique_index"
   end

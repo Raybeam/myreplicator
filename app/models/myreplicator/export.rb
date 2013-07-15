@@ -50,7 +50,7 @@ module Myreplicator
       Log.run(:job_type => "export", :name => schedule_name, 
       :file => filename, :export_id => id) do |log|
         # TRUNCATE TABLE & Rest incremental value if there is any
-        sql = "TRUNCATE TABLE '#{self.destination_schema}'.'#{self.table_name}';"
+        sql = "TRUNCATE TABLE #{self.destination_schema}.#{self.table_name};"
         if self.export_to == "vertica"
           Myreplicator::DB.exec_sql("vertica",sql)
         else
