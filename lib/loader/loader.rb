@@ -382,7 +382,7 @@ module Myreplicator
       
       puts sql
       
-      desc = DB.exec_sql(options[:source_schema], sql)
+      desc = Myreplicator::DB.exec_sql(options[:source_schema], sql)
       puts desc
       return desc
     end

@@ -141,7 +141,9 @@ module Myreplicator
 
         #Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
         #Kernel.p options
-        cmd = SqlCommands.mysql_export_outfile(options)      
+        cmd = SqlCommands.mysql_export_outfile(options)
+        #Kernel.p "===== incremental_export_into_outfile CMD ====="
+        #puts cmd      
         exporting_state_trans
         puts "Exporting..."
         result = execute_export(cmd, metadata)

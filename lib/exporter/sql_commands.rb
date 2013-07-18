@@ -120,19 +120,22 @@ module Myreplicator
     # FROM king.customer WHERE customer_id in ( 261085,348081,477336 );
     ##
     
-    def self.get_columns
+    def self.get_columns * args
       options = args.extract_options!
+      #Kernel.p "===== GET COLUMNS OPTIONS ====="
+      #Kernel.p options
       #
       exp = Myreplicator::Export.find(options[:export_id])
       #
       mysql_schema = Myreplicator::Loader.mysql_table_definition(options)
       mysql_schema_simple_form = Myreplicator::MysqlExporter.get_mysql_schema_rows mysql_schema
       columns = Myreplicator::VerticaLoader.get_mysql_inserted_columns mysql_schema_simple_form
-      Kernel.p columns
+      #Kernel.p "===== table's columns====="
+      #Kernel.p columns
       
       json = JSON.parse(exp.removing_special_chars)
-      Kernel.p exp.removing_special_chars
-      Kernel.p json
+      #Kernel.p exp.removing_special_chars
+      #Kernel.p json
       result = []
       columns.each do |column|
         if !json[column].blank?
@@ -145,7 +148,7 @@ module Myreplicator
             else
               sql = "REPLACE(#{sql}, '#{k}', '#{v}')"
             end
-            puts sql
+            #puts sql
           end
           result << sql
         else
@@ -160,9 +163,10 @@ module Myreplicator
     # Provided for tables that need special delimiters
     ##
     
-    def self.get_outfile_sql options 
-      Kernel.p "===== SELECT * INTO OUTFILE OPTIONS====="
-      Kernel.p options
+    def self.get_outfile_sql *args 
+      options = args.extract_options!
+      #Kernel.p "===== SELECT * INTO OUTFILE OPTIONS====="
+      #Kernel.p options
       columns = get_columns options
       sql = "SELECT #{columns.join(',')} INTO OUTFILE '#{options[:filepath]}' "
       #sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
@@ -199,17 +203,17 @@ module Myreplicator
     # Location of the output file needs to have 777 perms
     ##
     def self.mysql_export_outfile *args
-      #Kernel.p "===== mysql_export_outfile OPTIONS ====="
-       
+      Kernel.p "===== mysql_export_outfile OPTIONS ====="
+      
       options = args.extract_options!
-      #Kernel.p options
+      Kernel.p options
       options.reverse_merge! :flags => []
       db = options[:source_schema]
 
       # Database host when ssh'ed into the db server
       db_host = "127.0.0.1"
-      #Kernel.p "===== mysql_export_outfile ssh_configs ====="
-      #Kernel.p ssh_configs(db)
+      Kernel.p "===== mysql_export_outfile ssh_configs ====="
+      Kernel.p ssh_configs(db)
       if !ssh_configs(db)["ssh_db_host"].blank?
         db_host =  ssh_configs(db)["ssh_db_host"]
       elsif !db_configs(db)["host"].blank?
