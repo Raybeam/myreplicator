@@ -112,6 +112,48 @@ module Myreplicator
       puts cmd
       return cmd
     end
+    
+    ##
+    # exp: 
+    # SELECT 
+    # customer_id,firstname,REPLACE(UPPER(`lastname`), 'NULL', 'ABC'),email,..,REPLACE(`modified_date`, '0000-00-00','1900-01-01'),..
+    # FROM king.customer WHERE customer_id in ( 261085,348081,477336 );
+    ##
+    
+    def self.get_columns
+      options = args.extract_options!
+      #
+      exp = Myreplicator::Export.find(options[:export_id])
+      #
+      mysql_schema = Myreplicator::Loader.mysql_table_definition(options)
+      mysql_schema_simple_form = Myreplicator::MysqlExporter.get_mysql_schema_rows mysql_schema
+      columns = Myreplicator::VerticaLoader.get_mysql_inserted_columns mysql_schema_simple_form
+      Kernel.p columns
+      
+      json = JSON.parse(exp.removing_special_chars)
+      Kernel.p exp.removing_special_chars
+      Kernel.p json
+      result = []
+      columns.each do |column|
+        if !json[column].blank?
+          puts json[column]
+          replaces = json[column]
+          sql = ""
+          replaces.each do |k,v|
+            if sql.blank?
+              sql = "REPLACE(#{column}, '#{k}', '#{v}')"
+            else
+              sql = "REPLACE(#{sql}, '#{k}', '#{v}')"
+            end
+            puts sql
+          end
+          result << sql
+        else
+          result << column
+        end
+      end
+      return result
+    end
 
     ##
     # Mysql export data into outfile option
@@ -121,7 +163,9 @@ module Myreplicator
     def self.get_outfile_sql options 
       Kernel.p "===== SELECT * INTO OUTFILE OPTIONS====="
       Kernel.p options
-      sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
+      columns = get_columns options
+      sql = "SELECT #{columns.join(',')} INTO OUTFILE '#{options[:filepath]}' "
+      #sql = "SELECT * INTO OUTFILE '#{options[:filepath]}' " 
       
       if options[:enclosed_by].blank?
         sql += " FIELDS TERMINATED BY '\\0' ESCAPED BY '' LINES TERMINATED BY ';~~;\n'"

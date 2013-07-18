@@ -122,7 +122,9 @@ module Myreplicator
           :table => @export_obj.table_name,
           :filepath => filepath,
           :destination_schema => @export_obj.destination_schema,
-          :enclosed_by => Myreplicator.configs[@export_obj.source_schema]["enclosed_by"]}
+          :enclosed_by => Myreplicator.configs[@export_obj.source_schema]["enclosed_by"],
+          :export_id => @export_obj.id
+        }
 
         schema_status = Myreplicator::MysqlExporter.schema_changed?(options)
         Kernel.p "===== schema_status ====="
@@ -132,9 +134,9 @@ module Myreplicator
         else
           options[:incremental_col] = @export_obj.incremental_column
           options[:incremental_col_type] = @export_obj.incremental_column_type
-          #options[:incremental_val] = @export_obj.max_incremental_value
           options[:export_type] = @export_obj.export_type
           options[:incremental_val] = [@export_obj.destination_max_incremental_value, @export_obj.max_incremental_value].min
+          #options[:incremental_val] = @export_obj.max_incremental_value
         end
 
         #Kernel.p "===== incremental_export_into_outfile OPTIONS ====="
