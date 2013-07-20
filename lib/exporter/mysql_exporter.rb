@@ -23,7 +23,7 @@ module Myreplicator
 
         prepare metadata
 
-        if @export_obj.export_type? == :new || load_to == "mysql"
+        if (@export_obj.export_type? == :new && load_to == "mysql") || load_to == "mysql"
           on_failure_state_trans(metadata, "new") # If failed, go back to new
           on_export_success(metadata)
           initial_export metadata
