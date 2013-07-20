@@ -27,8 +27,11 @@ module Myreplicator
 
       cmd = Myreplicator.mysqldump
       cmd += "#{flags} -u#{db_configs(db)["username"]} -p#{db_configs(db)["password"]} "
-      cmd += "-h#{db_host} "
-      cmd += " -P#{db_configs(db)["port"]} " if db_configs(db)["port"]
+      Kernel.p "==== db_configs(db)['unuse_host_and_port'].blank? ====="
+      Kernel.p db_configs(db)
+      Kernel.p db_configs(db)["unuse_host_and_port"].blank?
+      cmd += "-h#{db_host} " if db_configs(db)["unuse_host_and_port"].blank?
+      cmd += " -P#{db_configs(db)["port"]} " if (db_configs(db)["port"] && db_configs(db)["unuse_host_and_port"].blank?)
       cmd += " #{db} "
       cmd += " #{options[:table_name]} "
       cmd += "--result-file=#{options[:filepath]} "
@@ -60,7 +63,7 @@ module Myreplicator
     # Default dump flags
     ## 
     def self.dump_flags
-      {"add-locks" => true,
+      {"add-locks" => false,
         "compact" => false,
         "lock-tables" => false,
         "no-create-db" => true,
@@ -242,8 +245,10 @@ module Myreplicator
       if db_configs(db).has_key? "socket"
         cmd += "--socket=#{db_configs(db)["socket"]} " 
       else
-        cmd += "-h#{db_host} " 
-        cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
+        cmd += "-h#{db_host} " if db_configs(db)["unuse_host_and_port"].blank?
+        if db_configs(db)["unuse_host_and_port"].blank?
+          cmd += db_configs(db)["port"].blank? ? "-P3306 " : "-P#{db_configs(db)["port"]} "
+        end
       end
       
       cmd += "--execute=\"#{get_outfile_sql(options)}\" "
