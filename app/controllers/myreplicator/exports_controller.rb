@@ -102,7 +102,7 @@ module Myreplicator
       @export = Export.find(params[:id])
       flash[:notice] = "'#{@export.destination_schema}.#{@export.table_name}' is reloading"
       @export.reload
-      redirect_to :action => 'show'
+      redirect_to :action => 'index'
     end
 
   private

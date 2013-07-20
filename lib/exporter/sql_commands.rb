@@ -132,8 +132,11 @@ module Myreplicator
       columns = Myreplicator::VerticaLoader.get_mysql_inserted_columns mysql_schema_simple_form
       #Kernel.p "===== table's columns====="
       #Kernel.p columns
-      
-      json = JSON.parse(exp.removing_special_chars)
+      if !exp.removing_special_chars.blank?
+        json = JSON.parse(exp.removing_special_chars)
+      else
+        json = {}
+      end
       #Kernel.p exp.removing_special_chars
       #Kernel.p json
       result = []
@@ -148,6 +151,7 @@ module Myreplicator
             else
               sql = "REPLACE(#{sql}, '#{k}', '#{v}')"
             end
+            sql.gsub!("back_slash","\\\\\\\\\\")
             #puts sql
           end
           result << sql
@@ -243,7 +247,7 @@ module Myreplicator
       end
       
       cmd += "--execute=\"#{get_outfile_sql(options)}\" "
-      
+      Kernel.p cmd
       puts cmd
       return cmd
     end
