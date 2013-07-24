@@ -277,6 +277,11 @@ module Myreplicator
         update_export(:state => state, 
                       :export_finished_at => Time.now, 
                       :error => metadata.error)
+        begin              
+          Myreplicator::Loader.cleanup metadata
+        rescue Exception => e
+          puts e.message
+        end
         raise Exceptions::ExportError.new(metadata.error)
       end
     end

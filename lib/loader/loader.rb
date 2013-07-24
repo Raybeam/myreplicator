@@ -310,8 +310,26 @@ module Myreplicator
     ##
     def self.cleanup metadata
       puts "Cleaning up..."
+      e1 = nil
+      e2 = nil
+      begin
       FileUtils.rm metadata.metadata_filepath(tmp_dir) # json file
+      rescue Exception => e
+        e1 = e
+        puts e.message
+      end
+      begin
       FileUtils.rm metadata.destination_filepath(tmp_dir) # dump file
+      rescue Exception => e
+        e2 = e
+        puts e.message
+      end
+      if (!e1.blank?)
+        raise Exceptions::LoaderError.new("#{e1.message}")
+      end
+      if (!e2.blank?)
+        raise Exceptions::LoaderError.new("#{e2.message}")
+      end
     end
 
     ##
