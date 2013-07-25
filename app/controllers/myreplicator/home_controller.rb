@@ -19,7 +19,7 @@ module Myreplicator
       @tab = 'home'
       @option = 'errors'
       @exports = Export.where("error is not null").order('source_schema ASC')    
-      @logs = Log.where(:state => 'error').order("started_at DESC") 
+      @logs = Log.where(:state => 'error').order("started_at DESC").limit(200)
     end
 
     def kill

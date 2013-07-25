@@ -13,12 +13,13 @@ module Myreplicator
       ActiveRecord::Base.configurations.keys.each do |db|
         Myreplicator::VerticaLoader.clean_up_temp_tables(db)
       end
-      folders = ["/home/share/datareplicator",
-        "/home/share/okl/bi_apps/datareplicator/mysqldumps"
-      ]
+      
+      #removing files that are left in the storage for more than 12 hours
+      folders = [
+        "/home/share/datareplicator",
+        "/home/share/okl/bi_apps/datareplicator/mysqldumps"]
         
       folders.each do |folder|
-        #cmd = "find #{folder} -mtime +2"
         cmd = "find #{folder} -mmin +720"
         l = `#{cmd}`
         list = l.split(/\n/)

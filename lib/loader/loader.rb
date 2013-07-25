@@ -4,6 +4,7 @@ module Myreplicator
   class Loader
     
     @queue = :myreplicator_load # Provided for Resque
+    @redis = Redis.new(:host => Settings[:redis][:host], :port => Settings[:redis][:port])
     
     def initialize *args
       options = args.extract_options!
