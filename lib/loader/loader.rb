@@ -5,6 +5,8 @@ module Myreplicator
     
     @queue = :myreplicator_load # Provided for Resque
     @redis = Redis.new(:host => Settings[:redis][:host], :port => Settings[:redis][:port])
+    @load_set = "myreplicator_load_set"
+    @load_hash = "myreplicator_load_hash" 
     
     def initialize *args
       options = args.extract_options!
@@ -53,8 +55,9 @@ module Myreplicator
       all_files = Myreplicator::Loader.metadata_files
       
       #Kernel.p "===== all_files ====="
-      #Kernel.p all_files 
-      
+      #Kernel.p all_files
+       
+=begin      
       all_files.each do |m|
         #Kernel.p m
         if m.export_type == "initial"
@@ -71,7 +74,56 @@ module Myreplicator
       end
       
       incrementals = all_files # Remaining are all incrementals
+=end   
+      # adding incremetal loading file to redis
+      files_to_metadata = {}
+        
       
+      all_files.each do |m|
+        if !(@redis.hexists(@load_hash, m.filepath))
+          @redis.hset(@load_hash, m.filepath, 0)
+          @redis.sadd(@load_set, m.filepath)
+        else
+          if @redis.hget(@load_hash, m.filepath) == 1
+            @redis.hdel(@load_hash, m.filepath)
+          end
+        end
+        files_to_metadata[m.filepath] = m
+      end
+      
+      filepath = @redis.spop(@load_set)
+      metadata = files_to_metadata[filepath]
+      if metadata.export_type == "incremental"
+        #1
+        Myreplicator::Log.run(:job_type => "loader",
+                              :name => "incremental_import",
+                              :file => metadata.filename,
+                              :export_id => metadata.export_id) do |log|
+          if Myreplicator::Loader.transfer_completed? metadata
+            Myreplicator::Loader.incremental_load metadata
+            Myreplicator::Loader.cleanup metadata
+          end
+        end
+        #2
+        @redis.hset(@load_hash, m.filepath, 1)
+      elsif metadata.export_type == "initial"
+        Myreplicator::Log.run(:job_type => "loader", 
+                              :name => "#{metadata.export_type}_import",
+                              :file => metadata.filename,
+                              :export_id => metadata.export_id) do |log|
+          if Myreplicator::Loader.transfer_completed? metadata
+            if metadata.export_to == "vertica"
+              Myreplicator::Loader.incremental_load metadata
+            else
+              Myreplicator::Loader.initial_load metadata
+            end
+            Myreplicator::Loader.cleanup metadata
+          end
+        end
+        @redis.hset(@load_hash, m.filepath, 1)
+      end
+      
+=begin      
       #initial_procs = Loader.initial_loads initials
       #parallel_load initial_procs
       initials.each do |metadata|
@@ -107,7 +159,7 @@ module Myreplicator
       end
        #   end # group
       #end # groups
-         
+=end         
     end
     
     def self.parallel_load procs
