@@ -150,7 +150,7 @@ module Myreplicator
           sql = ""
           replaces.each do |k,v|
             if sql.blank?
-              sql = "REPLACE(#{column}, '#{k}', '#{v}')"
+              sql = "REPLACE(\\`#{column}\\`, '#{k}', '#{v}')"
             else
               sql = "REPLACE(#{sql}, '#{k}', '#{v}')"
             end
@@ -159,9 +159,10 @@ module Myreplicator
           end
           result << sql
         else
-          result << column
+          result << "\\`#{column}\\`"
         end
       end
+      Kernel.p result
       return result
     end
 
@@ -199,7 +200,7 @@ module Myreplicator
           sql += "WHERE #{options[:incremental_col]} >= #{options[:incremental_val].to_i - 10000}" #buffer 10000 
         end
       end
-
+      Kernel.p sql
       return sql
     end
 

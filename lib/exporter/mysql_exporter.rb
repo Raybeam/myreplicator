@@ -110,7 +110,7 @@ module Myreplicator
     def incremental_export_into_outfile metadata
       unless @export_obj.is_running?
         
-        if @export_obj.export_type == "incremental"
+        if @export_obj.export_type == "incremental" || (@export_obj.export_type == "all" && @export_obj.export_to == "vertica")
           max_value = @export_obj.max_value
           metadata.export_type = "incremental"        
           @export_obj.update_max_val if @export_obj.max_incremental_value.blank?   
