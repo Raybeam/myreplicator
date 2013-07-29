@@ -10,6 +10,7 @@ module Myreplicator
     def self.perform
       Myreplicator::Log.clear_deads
       Myreplicator::Log.clear_stucks
+      Myreplicator::Log.clear_olds
       ActiveRecord::Base.configurations.keys.each do |db|
         Myreplicator::VerticaLoader.clean_up_temp_tables(db)
       end

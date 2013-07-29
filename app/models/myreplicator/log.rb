@@ -150,6 +150,19 @@ module Myreplicator
       
     end
 
+    def self.clear_olds
+      logs = Myreplicator::Log.where("started_at < date_sub(now(), interval 2 day)")
+  
+      if logs.count > 0
+        logs.each do |log|
+          begin
+            log.destroy
+          end
+        end
+      end
+      
+    end
+
     ##
     # Gets a jobtype, file and export_id
     # returns true if the job is completed
