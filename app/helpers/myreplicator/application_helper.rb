@@ -17,16 +17,22 @@ module Myreplicator
       }.compact.reverse.join(', ')
     end
 
-    def err_count
-      total = Log.where(:state => 'error').count
-      return total
+    def export_err_count
+      count = Log.where("state = 'error' AND job_type = 'export'").count
     end
 
 
     def run_count
       total = Log.where(:state => 'running').count
-      return total
     end
 
+    def loader_err_count
+      count = Log.where("state = 'error' AND job_type = 'loader'").count
+    end
+    
+    def transporter_err_count
+      count = Log.where("state = 'error' AND job_type = 'transporter'").count
+    end
+    
   end
 end

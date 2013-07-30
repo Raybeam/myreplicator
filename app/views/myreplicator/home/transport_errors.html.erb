@@ -1,0 +1,12 @@
+<%= render :partial => 'home_menu' %>
+
+<% @logs.each do |log| %>
+<div class="error-display">
+  <span><em>name:</em> <%= log.name %></span>
+  <span><em>file:</em> <%= log.file %></span>
+  <span><em>type:</em> <%= log.job_type %></span>
+  <span><em>started:</em> <%= log.started_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+  <span><em>error:</em></span>
+  <pre><%= log.error %></pre>
+</div>
+<% end %>

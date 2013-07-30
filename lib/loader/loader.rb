@@ -111,8 +111,8 @@ module Myreplicator
           #2
           @redis.hset(@load_hash, metadata.filepath, 1)
         end
-        
-      end        
+        sleep(2)
+      end # end while        
     end
     
     def self.parallel_load procs

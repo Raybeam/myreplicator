@@ -7,7 +7,7 @@ module Myreplicator
       @tab = 'home'
       @option = 'overview'
       @exports = Export.order('state DESC')
-      @logs = Log.where(:state => 'running').order("started_at DESC")
+      @logs = Log.where(:state => 'running').order("id DESC")
       @now = Time.zone.now
       respond_to do |format|
         format.html # index.html.erb
@@ -15,12 +15,28 @@ module Myreplicator
       end
     end
 
-    def errors
+    def export_errors
       @tab = 'home'
       @option = 'errors'
       @exports = Export.where("error is not null").order('source_schema ASC')    
-      @logs = Log.where(:state => 'error').order("started_at DESC").limit(200)
+      @logs = Log.where("state = 'error' AND job_type = 'export'").order("id DESC").limit(200)
+      @count = Log.where("state = 'error' AND job_type = 'export'").count
     end
+    
+    def transport_errors
+      @tab = 'home'
+      @option = 'errors'
+      @logs = Log.where("state = 'error' AND job_type = 'transporter'").order("id DESC").limit(200)
+      @count = Log.where("state = 'error' AND job_type = 'transporter'").count
+    end
+
+    def load_errors
+      @tab = 'home'
+      @option = 'errors'
+      @logs = Log.where("state = 'error' AND job_type = 'loader'").order("id DESC").limit(200)
+      @count = Log.where("state = 'error' AND job_type = 'loader'").count
+    end
+    
 
     def kill
       @log = Log.find(params[:id])

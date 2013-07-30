@@ -1,9 +1,13 @@
 <% 
-  err = err_count 
+  err1 = export_err_count
+  err2 = loader_err_count
+  err3 = transporter_err_count 
   run = run_count
 %>
 <div class="home-menu">
   <span>lists:</span>
   <a href="<%= root_url %>" class="<% if @option == 'overview' %>on<% end %> overview">overview <% if run > 0 %><span><%= run %></span><% end %></a>
-  <a href="<%= errors_path %>" class="<% if @option == 'errors' %>on<% end %>">errors <% if err > 0 %><span><%= err %></span><% end %></a>
+  <a href="<%= export_errors_path %>" class="<% if @option == 'errors' %>on<% end %>">export errors <% if err1 > 0 %><span><%= err1 %></span><% end %></a>
+  <a href="<%= transport_errors_path %>" class="<% if @option == 'errors' %>on<% end %>">transport errors <% if err3 > 0 %><span><%= err3 %></span><% end %></a>
+  <a href="<%= load_errors_path %>" class="<% if @option == 'errors' %>on<% end %>">load errors <% if err2 > 0 %><span><%= err2 %></span><% end %></a>
 </div>
