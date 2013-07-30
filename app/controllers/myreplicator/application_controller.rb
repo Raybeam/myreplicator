@@ -3,7 +3,7 @@ module Myreplicator
     before_filter :authenticated?
     
     private 
-
+    
     def authenticated?
       Kernel.p Myreplicator.auth_required
       if Myreplicator.auth_required

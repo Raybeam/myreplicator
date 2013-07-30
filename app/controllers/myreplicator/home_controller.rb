@@ -51,6 +51,8 @@ module Myreplicator
       resque_reload = Rake::Task['maintenance:stop_dr_jobs']
       resque_reload.reenable
       resque_reload.execute(ENV["RAILS_ENV"])
+      @redis = Redis.new(:host => Settings[:redis][:host], :port => Settings[:redis][:port])
+      @redis.set "under_maintenance", "true"
       redirect_to :action => 'index'
     end
         
@@ -61,6 +63,8 @@ module Myreplicator
       resque_reload = Rake::Task['maintenance:start_dr_jobs']
       resque_reload.reenable
       resque_reload.execute(ENV["RAILS_ENV"])
+      @redis = Redis.new(:host => Settings[:redis][:host], :port => Settings[:redis][:port])
+      @redis.set "under_maintenance", "false"
       redirect_to :action => 'index'
     end
   end

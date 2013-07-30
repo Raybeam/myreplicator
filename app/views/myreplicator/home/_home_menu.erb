@@ -3,7 +3,9 @@
   err2 = loader_err_count
   err3 = transporter_err_count 
   run = run_count
+  um = under_maintenance
 %>
+<%if um == true%> <div id="maint-message">The site is currently under maintanence</div> <% end %>
 <div class="home-menu">
   <span>lists:</span>
   <a href="<%= root_url %>" class="<% if @option == 'overview' %>on<% end %> overview">overview <% if run > 0 %><span><%= run %></span><% end %></a>
