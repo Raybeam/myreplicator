@@ -83,11 +83,11 @@ module Myreplicator
         end
         # init load
         if metadata.export_type == "initial"
-          Myreplicator::Log.run(:job_type => "loader",
-          :name => "#{metadata.export_type}_import",
-          :file => metadata.filename,
-          :export_id => metadata.export_id) do |log|
-            if Myreplicator::Loader.transfer_completed? metadata
+          if Myreplicator::Loader.transfer_completed? metadata
+            Myreplicator::Log.run(:job_type => "loader",
+            :name => "#{metadata.export_type}_import",
+            :file => metadata.filename,
+            :export_id => metadata.export_id) do |log|
               if metadata.export_to == "vertica"
                 Myreplicator::Loader.incremental_load metadata
               else
@@ -95,21 +95,24 @@ module Myreplicator
               end
               Myreplicator::Loader.cleanup metadata
             end
+            @redis.hset(@load_hash, metadata.filepath, 1)
+          else #transporter not done yet, return the file to @load_set 
+            @redis.sadd(@load_set, metadata.filepath)
           end
-          @redis.hset(@load_hash, metadata.filepath, 1)
+          
         else #if metadata.export_type == "incremental" # incremental load
-          #1
-          Myreplicator::Log.run(:job_type => "loader",
-          :name => "incremental_import",
-          :file => metadata.filename,
-          :export_id => metadata.export_id) do |log|
-            if Myreplicator::Loader.transfer_completed? metadata
+          if Myreplicator::Loader.transfer_completed? metadata
+            Myreplicator::Log.run(:job_type => "loader",
+            :name => "incremental_import",
+            :file => metadata.filename,
+            :export_id => metadata.export_id) do |log|
               Myreplicator::Loader.incremental_load metadata
               Myreplicator::Loader.cleanup metadata
             end
+            @redis.hset(@load_hash, metadata.filepath, 1)
+          else #transporter not done yet, return the file to @load_set
+            @redis.sadd(@load_set, metadata.filepath)
           end
-          #2
-          @redis.hset(@load_hash, metadata.filepath, 1)
         end
         sleep(2)
       end # end while        
