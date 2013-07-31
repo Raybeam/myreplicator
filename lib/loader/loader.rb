@@ -66,11 +66,15 @@ module Myreplicator
       
       # making the hash for mapping filepath to metadata object
       all_files.each do |m|
-        if !(@redis.hexists(@load_hash, m.filepath))
-          @redis.hset(@load_hash, m.filepath, 0)
-          @redis.sadd(@load_set, m.filepath)
+        if Myreplicator::Loader.transfer_completed? m
+          if !(@redis.hexists(@load_hash, m.filepath))
+            @redis.hset(@load_hash, m.filepath, 0)
+            @redis.sadd(@load_set, m.filepath)
+          end
+          files_to_metadata[m.filepath] = m
+        else
+          # for the fun of commenting: do nothing
         end
-        files_to_metadata[m.filepath] = m
       end
       
       # processing the files in "queue"
