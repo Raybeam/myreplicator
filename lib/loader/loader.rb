@@ -56,10 +56,20 @@ module Myreplicator
       @redis = Redis.new(:host => Settings[:redis][:host], :port => Settings[:redis][:port])
       @load_set = "myreplicator_load_set"
       @load_hash = "myreplicator_load_hash"
+      
       # clear out |k,v| of already deleted filed 
       @redis.hgetall(@load_hash).size
       @redis.hgetall(@load_hash).each do |k, v|
         if @redis.hget(@load_hash, k) == '1'
+          @redis.hdel(@load_hash, k)
+        end
+      end
+      
+      # check if there is any other running loader, if not then reset the load_hash
+      cmd = "ps aux | grep 'Processing myreplicator_load'"
+      result = `#{cmd} 2>&1`
+      if (result.split("Processing myreplicator_load since").size <= 2)
+        @redis.hgetall(@load_hash).each do |k, v|
           @redis.hdel(@load_hash, k)
         end
       end
