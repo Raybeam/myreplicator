@@ -192,7 +192,7 @@ module Myreplicator
           if options[:incremental_val] == "0"
             options[:incremental_val] = "1900-01-01 00:00:00"
           end
-          sql += "WHERE #{options[:incremental_col]} >= '#{(DateTime.parse(options[:incremental_val]) -1.day).to_s(:db)}'" #buffer 1 day
+          sql += "WHERE #{options[:incremental_col]} >= '#{(DateTime.parse(options[:incremental_val]) -1.hour).to_s(:db)}'" #buffer 1 hour
         elsif options[:incremental_col_type] == "int"
           if options[:incremental_val].blank?
             options[:incremental_val] = "0"
