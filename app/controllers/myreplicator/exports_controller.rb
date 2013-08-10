@@ -9,7 +9,25 @@ module Myreplicator
     # GET /exports.json
     def index
       @exports = Export.paginate(:page => params[:page]).order(sort_column + " " + sort_direction)
-  
+      @export = Export.first
+      @dbs = get_dbs
+      @search = Export.first
+      respond_to do |format|
+        format.html # index.html.erb
+        format.json { render json: @exports }
+      end
+      
+    end
+    
+    def search
+      Kernel.p params
+      export_to = params[:export_to]
+      table_name = params[:table_name]
+      @exports = Export.paginate(:page => params[:page]).where("table_name LIKE '%#{table_name}%'")
+      Kernel.p @exports.size 
+      @search = Export.first
+      @dbs = get_dbs
+      @export = Export.first
       respond_to do |format|
         format.html # index.html.erb
         format.json { render json: @exports }

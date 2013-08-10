@@ -5,6 +5,7 @@ Myreplicator::Engine.routes.draw do
   match '/transport_errors', :to => "home#transport_errors", :as => 'transport_errors'
   match '/load_errors', :to => "home#load_errors", :as => 'load_errors'
   match '/kill/:id', :to => 'home#kill', :as => 'kill'
+  match '/search', :to => "exports#search"
   
   resources :home do
     get :pause, :on => :collection
@@ -12,6 +13,7 @@ Myreplicator::Engine.routes.draw do
   end
   
   resources :exports do
+    get :search, :on => :collection
     member do
       get 'reload'
     end
