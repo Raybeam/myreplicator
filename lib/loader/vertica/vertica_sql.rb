@@ -15,8 +15,8 @@ module Myreplicator
         sql += data_type(column['data_type'], column['column_type'])
         sql += " "
 
-        sql += nullable(column['is_nullable'])
-        sql += " "
+        #sql += nullable(column['is_nullable'])
+        #sql += " "
 
         if index < options[:columns].size
           sql += ", "
