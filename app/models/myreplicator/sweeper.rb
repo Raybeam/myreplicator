@@ -1,8 +1,7 @@
 module Myreplicator
   class Sweeper
-   
+
     @queue = :myreplicator_sweeper # Provided for Resque
-    
     ##
     # Main method provided for resque
     # Reconnection provided for resque workers
@@ -14,12 +13,13 @@ module Myreplicator
       ActiveRecord::Base.configurations.keys.each do |db|
         Myreplicator::VerticaLoader.clean_up_temp_tables(db)
       end
-      
+
       #removing files that are left in the storage for more than 12 hours
       folders = [
-        "/home/share/datareplicator",
-        "/home/share/okl/bi_apps/datareplicator/mysqldumps"]
-        
+        "#{Myreplicator.tmp_path}",
+        "#{Myreplicator.configs[Myreplicator.configs.keys[1]]["ssh_tmp_dir"]}"
+      ]
+
       folders.each do |folder|
         cmd = "find #{folder} -mmin +720"
         l = `#{cmd}`
@@ -36,6 +36,6 @@ module Myreplicator
       end
 
     end
-    
+
   end
 end
